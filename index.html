@@ -127,6 +127,105 @@
 
   canvas { display:block; width:100%; aspect-ratio:1; }
 
+  /* Observer Controls */
+  .obs-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-bottom: 10px;
+  }
+
+  .obs-btn {
+    background: transparent;
+    border: 1px solid rgba(0,255,255,0.2);
+    color: rgba(170,170,255,0.7);
+    padding: 9px 6px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .obs-btn:hover {
+    background: rgba(0,255,255,0.08);
+    border-color: #00ffff;
+    color: #00ffff;
+    box-shadow: 0 0 10px rgba(0,255,255,0.2);
+  }
+  .obs-btn.rewind:hover {
+    border-color: #ff00ff;
+    color: #ff00ff;
+    box-shadow: 0 0 10px rgba(255,0,255,0.2);
+  }
+
+  .skip-row {
+    display: flex;
+    gap: 7px;
+    align-items: center;
+  }
+  .skip-input {
+    flex: 1;
+    background: rgba(0,0,20,0.6);
+    border: 1px solid rgba(0,255,255,0.2);
+    border-radius: 2px;
+    color: #00ffff;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    padding: 8px 10px;
+    outline: none;
+    text-align: center;
+    letter-spacing: 0.1em;
+    width: 100%;
+  }
+  .skip-input::placeholder { color: rgba(0,255,255,0.25); }
+  .skip-input:focus { border-color: rgba(0,255,255,0.5); box-shadow: 0 0 8px rgba(0,255,255,0.15); }
+
+  .skip-go {
+    background: transparent;
+    border: 1px solid rgba(0,255,255,0.3);
+    color: rgba(0,255,255,0.8);
+    padding: 8px 14px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .skip-go:hover {
+    background: rgba(0,255,255,0.1);
+    border-color: #00ffff;
+    box-shadow: 0 0 12px rgba(0,255,255,0.3);
+  }
+
+  /* Mirror link */
+  .mirror-link {
+    display: block;
+    text-align: center;
+    margin-top: 10px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(187,0,255,0.5);
+    text-decoration: none;
+    padding: 8px;
+    border: 1px solid rgba(187,0,255,0.15);
+    border-radius: 2px;
+    transition: all 0.3s;
+  }
+  .mirror-link:hover {
+    color: rgba(187,0,255,0.95);
+    border-color: rgba(187,0,255,0.5);
+    box-shadow: 0 0 14px rgba(187,0,255,0.2);
+    text-shadow: 0 0 10px rgba(187,0,255,0.5);
+  }
+
   /* Observer Timer */
   .obs-timer {
     position: absolute;
@@ -469,6 +568,19 @@
       <div class="evo-stage" id="evoStage">Initialising...</div>
       <div class="card-title" style="margin-top:12px">Current Signal</div>
       <p class="desc-text" id="descText">Deep cosmos pattern loading...</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Observer Controls</div>
+      <div class="obs-controls">
+        <button class="obs-btn rewind" onclick="rewindTimer()">⟨⟨ &minus;5s</button>
+        <button class="obs-btn" onclick="resetTimer()">↺ Reset</button>
+      </div>
+      <div class="skip-row">
+        <input class="skip-input" id="skipInput" type="text" placeholder="0:45" maxlength="5" />
+        <button class="skip-go" onclick="skipToTime()">JUMP</button>
+      </div>
+      <a class="mirror-link" href="https://thecapgary.github.io/AI-mirror/" target="_blank">✦ The AI Mirror ✦</a>
     </div>
 
   </div>
@@ -1143,6 +1255,27 @@ function setKimiFav() {
   Object.keys(layers).forEach(k=>{ layers[k]=false; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on'); });
   layers.julia=true; document.getElementById('btnJulia').classList.add('on');
   layers.wave=true; document.getElementById('btnWave').classList.add('on');
+}
+
+function rewindTimer() {
+  timerStart = Math.min(Date.now(), timerStart + 5000);
+  const el = document.getElementById('obsTimer');
+  if(el) el.classList.remove('pulse');
+}
+
+function skipToTime() {
+  const raw = document.getElementById('skipInput').value.trim();
+  let totalSeconds = 0;
+  if(raw.includes(':')) {
+    const parts = raw.split(':');
+    totalSeconds = parseInt(parts[0]||0)*60 + parseInt(parts[1]||0);
+  } else {
+    totalSeconds = parseInt(raw)||0;
+  }
+  timerStart = Date.now() - (totalSeconds * 1000);
+  const el = document.getElementById('obsTimer');
+  if(el) el.classList.remove('pulse');
+  document.getElementById('skipInput').value = '';
 }
 
 // Hook into setFreq to reset on any frequency/preset change
