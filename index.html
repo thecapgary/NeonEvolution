@@ -127,6 +127,35 @@
 
   canvas { display:block; width:100%; aspect-ratio:1; }
 
+  /* Observer Timer */
+  .obs-timer {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    color: rgba(0,255,255,0.35);
+    pointer-events: none;
+    z-index: 6;
+    transition: color 0.6s ease;
+    text-shadow: 0 0 8px rgba(0,255,255,0.2);
+    user-select: none;
+    text-align: right;
+  }
+  .obs-timer.pulse {
+    color: rgba(255,0,255,0.8);
+    text-shadow: 0 0 14px rgba(255,0,255,0.5);
+  }
+  .obs-timer-label {
+    display: block;
+    font-size: 0.38rem;
+    letter-spacing: 0.25em;
+    color: rgba(0,255,255,0.18);
+    margin-bottom: 3px;
+  }
+
   /* Freq badge */
   .freq-badge {
     position:absolute;
@@ -356,6 +385,10 @@
   <div class="canvas-wrap">
     <canvas id="c"></canvas>
     <div class="freq-badge" id="freqBadge">432 Hz</div>
+    <div class="obs-timer" id="obsTimer">
+      <span class="obs-timer-label">OBSERVER</span>
+      <span id="obsTimerVal">0:00</span>
+    </div>
   </div>
 
   <div class="panel">
@@ -445,6 +478,28 @@
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 
+// ── OBSERVER TIMER (defined early so setFreq can call it) ──
+let timerStart = Date.now();
+const magicMoments = { 528:60, 396:45, 639:90, 741:75, 432:60, 174:59, 963:74, 417:0 };
+function resetTimer() {
+  timerStart = Date.now();
+  const el = document.getElementById('obsTimer');
+  if(el) el.classList.remove('pulse');
+}
+function updateTimer() {
+  const el = document.getElementById('obsTimerVal');
+  const wrap = document.getElementById('obsTimer');
+  if(!el||!wrap) return;
+  const elapsed = Math.floor((Date.now()-timerStart)/1000);
+  const m = Math.floor(elapsed/60);
+  const s = elapsed%60;
+  el.textContent=`${m}:${s.toString().padStart(2,'0')}`;
+  const magic = magicMoments[freq];
+  if(magic && Math.abs(elapsed-magic)<=3 && elapsed>0) wrap.classList.add('pulse');
+  else wrap.classList.remove('pulse');
+}
+setInterval(updateTimer, 500);
+
 // State
 let freq=432, mutRate=1, depth=5, density=6, chroma=6;
 let t=0, evoPhase=0;
@@ -499,6 +554,7 @@ document.getElementById('chromaSlider').addEventListener('input',e=>{
 
 function setFreq(f, updateSlider=true) {
   freq=f;
+  resetTimer();
   if(updateSlider) document.getElementById('freqSlider').value=f;
   document.getElementById('freqDisplay').textContent=f;
   document.getElementById('freqBadge').textContent=f+' Hz';
@@ -1088,6 +1144,9 @@ function setKimiFav() {
   layers.julia=true; document.getElementById('btnJulia').classList.add('on');
   layers.wave=true; document.getElementById('btnWave').classList.add('on');
 }
+
+// Hook into setFreq to reset on any frequency/preset change
+// (resetTimer is called inside setFreq directly)
 
 updateDesc();
 render();
