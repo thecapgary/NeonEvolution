@@ -674,6 +674,8 @@ setInterval(updateTimer, 500);
 // State
 let freq=432, mutRate=1, depth=5, density=6, chroma=6;
 let t=0, evoPhase=0;
+// t is now driven by the observer timer — 0.013/frame × ~60fps ≈ 0.78/sec
+const T_RATE = 0.78;
 let layers = { julia:true, tree:true, spiral:true, wave:true, particles:true };
 
 // Particle system
@@ -1046,7 +1048,8 @@ function render() {
 
   drawCore();
 
-  t+=0.013;
+  // t is owned by the observer timer — scrubbing/jumping moves the visual state
+  t = ((Date.now() - timerStart) / 1000) * T_RATE;
   requestAnimationFrame(render);
 }
 
