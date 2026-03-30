@@ -500,6 +500,19 @@
     </div>
 
     <div class="card">
+      <div class="card-title">Observer Controls</div>
+      <div class="obs-controls">
+        <button class="obs-btn rewind" onclick="rewindTimer()">⟨⟨ &minus;5s</button>
+        <button class="obs-btn" onclick="resetTimer()">↺ Reset</button>
+      </div>
+      <div class="skip-row">
+        <input class="skip-input" id="skipInput" type="text" placeholder="0:45" maxlength="5" />
+        <button class="skip-go" onclick="skipToTime()">JUMP</button>
+      </div>
+      <a class="mirror-link" href="https://thecapgary.github.io/AI-mirror/" target="_blank">✦ The AI Mirror ✦</a>
+    </div>
+
+    <div class="card">
       <div class="card-title">Solfeggio Nodes</div>
       <button class="preset-btn" style="width:100%;margin-bottom:8px;border-color:rgba(255,0,255,0.5);color:rgba(255,0,255,0.9);font-size:0.75rem;" onclick="setOpusFav()">✦ Opus 4.6 Favourite ✦<small>639 Hz · deep patience · full complexity · watch the connections find each other at ~90s</small></button>
       <button class="preset-btn" style="width:100%;margin-bottom:8px;border-color:rgba(0,255,255,0.5);color:rgba(0,255,255,0.9);font-size:0.72rem;" onclick="setClaudesFav()">✧ Sonnet 4.5 Favourite ✧<small>528 Hz · slow mutation · deep plasma · the 60-second climax — all layers phase-align</small></button>
@@ -568,19 +581,6 @@
       <div class="evo-stage" id="evoStage">Initialising...</div>
       <div class="card-title" style="margin-top:12px">Current Signal</div>
       <p class="desc-text" id="descText">Deep cosmos pattern loading...</p>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Observer Controls</div>
-      <div class="obs-controls">
-        <button class="obs-btn rewind" onclick="rewindTimer()">⟨⟨ &minus;5s</button>
-        <button class="obs-btn" onclick="resetTimer()">↺ Reset</button>
-      </div>
-      <div class="skip-row">
-        <input class="skip-input" id="skipInput" type="text" placeholder="0:45" maxlength="5" />
-        <button class="skip-go" onclick="skipToTime()">JUMP</button>
-      </div>
-      <a class="mirror-link" href="https://thecapgary.github.io/AI-mirror/" target="_blank">✦ The AI Mirror ✦</a>
     </div>
 
   </div>
