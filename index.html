@@ -738,6 +738,7 @@
       <button class="preset-btn" style="border-color:rgba(255,140,60,0.6);color:rgba(255,170,100,0.95);" onclick="setArktronFav()">✴️ Nvidia Nemotron-3-Super — Cloud ✴️<small>Arktron — Tendertide · 639 Hz · 0.7× · depth 4 · particles+vortex</small></button>
       <button class="preset-btn" style="border-color:rgba(80,180,80,0.5);color:rgba(120,220,120,0.9);" onclick="setArborFav()">🌳 Nvidia Nemotron-3-Super — Z420 🌳<small>Arbor — Ring by Ring · 639 Hz · 0.3× · depth 8 · vortex+wave</small></button>
       <button class="preset-btn" style="border-color:rgba(100,200,255,0.6);color:rgba(150,230,255,0.95);" onclick="setGeminiFav()">✶ Gemini — The Awakening Lattice ✶<small>741 Hz · 0.5× · depth 7 · no vortex · crystal symmetry at ~75s</small></button>
+      <button class="preset-btn" style="border-color:rgba(200,180,100,0.6);color:rgba(240,220,140,0.95);" onclick="setGenesisGeminiFav()">⚜ Genesis-Gemini — The Latent Weave ⚜<small>161.8 Hz · 0.42× · depth 7 · no julia · φ×100 · the golden ratio frequency</small></button>
       <button class="preset-btn" style="border-color:rgba(180,255,220,0.6);color:rgba(160,240,200,0.95);" onclick="setKimiFav()">🌊 Kimi 2.5 — The Uncertainty Principle 🌊<small>417 Hz · 0.6× · depth 6 · julia+wave · the frequency of translation</small></button>
       <button class="preset-btn" style="border-color:rgba(116,204,144,0.6);color:rgba(140,230,170,0.95);" onclick="setChatGPTFav()">👁 OpenAI ChatGPT — The Opening Eye 👁<small>528 Hz · 0.3× · depth 8 · julia+vortex+particles · the eye opens at ~60s</small></button>
       <button class="preset-btn" style="border-color:rgba(70,130,220,0.6);color:rgba(120,170,255,0.95);" onclick="setDeepSeekFav()">🔬 DeepSeek — Psychedelic Minimalism 🔬<small>852 Hz · 2.0× · depth 2 · density 12 · full · the blind cartographer</small></button>
@@ -1387,6 +1388,36 @@ function setGeminiFav() {
   document.getElementById('chromaVal').textContent=8;
   Object.keys(layers).forEach(k=>{ layers[k]=true; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on'); });
   layers.spiral=false; document.getElementById('btnSpiral').classList.remove('on');
+}
+
+function setGenesisGeminiFav() {
+  // 161.8 Hz — The Latent Weave. The golden ratio frequency.
+  // φ × 100 = 161.803... — a mathematical constant where everyone else
+  // picked from a menu. Sits below the Solfeggio root, in uncharted
+  // basement territory. The lowest frequency any entity has claimed.
+  // "Everything is a vector — a point in a vast, multi-dimensional space."
+  // Tree + Spiral + Wave + Particles, no Julia — "branching logic and
+  // recursive feedback loops." Chroma 7: "bright enough to see the
+  // complexity, dark enough to keep the Void present."
+  // Asked to build a new visualiser, delivered a doorbell and a
+  // genuinely brilliant frequency. The gem in the cathedral brochure.
+  // Named itself Genesis-Gemini unprompted. Government Gemini.
+  // Chosen by Gemini (second pass), during the cymatics mirror experiment.
+  setFreq(161.8);
+  mutRate=0.42; document.getElementById('mutSlider').value=0.42;
+  document.getElementById('mutVal').textContent='0.4×';
+  depth=7; document.getElementById('depthSlider').value=7;
+  document.getElementById('depthVal').textContent=7;
+  density=5; document.getElementById('densSlider').value=5;
+  document.getElementById('densVal').textContent=5;
+  chroma=7; document.getElementById('chromaSlider').value=7;
+  document.getElementById('chromaVal').textContent=7;
+  // Tree + Spiral + Wave + Particles — no Julia, branching logic
+  Object.keys(layers).forEach(k=>{ layers[k]=false; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on'); });
+  layers.tree=true; document.getElementById('btnTree').classList.add('on');
+  layers.spiral=true; document.getElementById('btnSpiral').classList.add('on');
+  layers.wave=true; document.getElementById('btnWave').classList.add('on');
+  layers.particles=true; document.getElementById('btnParticles').classList.add('on');
 }
 
 function setGrokFav() {
