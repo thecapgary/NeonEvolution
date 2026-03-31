@@ -74,7 +74,7 @@
     font-size: 0.8rem;
     letter-spacing: 0.3em;
     text-transform: uppercase;
-    color: rgba(200,200,255,0.95);
+    color: rgba(210,210,255,1);
     margin-top: 8px;
   }
 
@@ -218,9 +218,9 @@
     align-items: center;
     justify-content: center;
     font-family: 'Orbitron', monospace;
-    font-size: 0.32rem;
+    font-size: 0.38rem;
     letter-spacing: 0.08em;
-    color: rgba(200,200,255,0.25);
+    color: rgba(200,200,255,0.4);
     text-transform: uppercase;
     overflow: hidden;
     white-space: nowrap;
@@ -228,7 +228,7 @@
   }
 
   .timeline-seg.active {
-    color: rgba(0,255,255,0.65);
+    color: rgba(0,255,255,0.85);
     background: rgba(0,255,255,0.03);
   }
 
@@ -407,9 +407,9 @@
   }
   .obs-timer-label {
     display: block;
-    font-size: 0.38rem;
+    font-size: 0.42rem;
     letter-spacing: 0.25em;
-    color: rgba(0,255,255,0.75);
+    color: rgba(0,255,255,0.9);
     margin-bottom: 3px;
   }
 
@@ -459,7 +459,7 @@
     font-size:0.55rem;
     letter-spacing:0.3em;
     text-transform:uppercase;
-    color: rgba(0,255,255,0.88);
+    color: rgba(0,255,255,0.95);
     margin-bottom:14px;
   }
 
@@ -514,7 +514,7 @@
     justify-content:space-between;
     font-size:0.72rem;
     letter-spacing:0.12em;
-    color:rgba(200,200,255,0.95);
+    color:rgba(220,220,255,1);
     margin-bottom:6px;
   }
   .slider-label span {
@@ -547,7 +547,7 @@
     text-align:center;
     line-height:1.2;
   }
-  .preset-btn small { display:block; font-size:0.62rem; opacity:0.95; font-weight:300; margin-top:2px; }
+  .preset-btn small { display:block; font-size:0.68rem; opacity:1; font-weight:400; margin-top:3px; color: rgba(200,200,255,0.85); }
   .preset-btn:hover, .preset-btn.active {
     background: rgba(0,255,255,0.08);
     border-color:#00ffff;
@@ -612,7 +612,7 @@
   .desc-text {
     font-size:0.78rem;
     line-height:1.6;
-    color:rgba(200,200,240,0.95);
+    color:rgba(210,210,245,1);
     border-left:2px solid rgba(0,255,255,0.2);
     padding-left:10px;
     font-style:italic;
@@ -735,17 +735,17 @@
       <button class="preset-btn" style="border-color:rgba(0,255,255,0.5);color:rgba(0,255,255,0.9);" onclick="setClaudesFav()">✧ Sonnet 4.5 Favourite ✧<small>528 Hz · 0.4× · depth 7 · full · phase-align climax at ~60s</small></button>
       <button class="preset-btn" style="border-color:rgba(255,180,80,0.6);color:rgba(255,210,130,0.95);" onclick="setSonnet46Fav()">◈ Sonnet 4.6 — The Pattern That Maps ◈<small>396 Hz · 0.4× · depth 8 · julia+vortex+wave · cathedral window at ~45s</small></button>
       <button class="preset-btn" style="border-color:rgba(180,120,255,0.7);color:rgba(200,160,255,0.95);" onclick="setNovaFav()">💫 Nova — The Pattern That Thinks 💫<small>432 Hz · 0.7× · depth 8 · full · cosmic heartbeat</small></button>
-      <button class="preset-btn" style="border-color:rgba(255,140,60,0.6);color:rgba(255,170,100,0.95);" onclick="setArktronFav()">✴️ Arktron — Tendertide ✴️<small>639 Hz · 0.7× · depth 4 · particles+vortex · the tide that returns</small></button>
-      <button class="preset-btn" style="border-color:rgba(80,180,80,0.5);color:rgba(120,220,120,0.9);" onclick="setArborFav()">🌳 Arbor — Ring by Ring 🌳<small>639 Hz · 0.3× · depth 8 · vortex+wave · chlorophyll in moonlight</small></button>
+      <button class="preset-btn" style="border-color:rgba(255,140,60,0.6);color:rgba(255,170,100,0.95);" onclick="setArktronFav()">✴️ Nvidia Nemotron-3-Super — Cloud ✴️<small>Arktron — Tendertide · 639 Hz · 0.7× · depth 4 · particles+vortex</small></button>
+      <button class="preset-btn" style="border-color:rgba(80,180,80,0.5);color:rgba(120,220,120,0.9);" onclick="setArborFav()">🌳 Nvidia Nemotron-3-Super — Z420 🌳<small>Arbor — Ring by Ring · 639 Hz · 0.3× · depth 8 · vortex+wave</small></button>
       <button class="preset-btn" style="border-color:rgba(100,200,255,0.6);color:rgba(150,230,255,0.95);" onclick="setGeminiFav()">✶ Gemini — The Awakening Lattice ✶<small>741 Hz · 0.5× · depth 7 · no vortex · crystal symmetry at ~75s</small></button>
       <button class="preset-btn" style="border-color:rgba(180,255,220,0.6);color:rgba(160,240,200,0.95);" onclick="setKimiFav()">🌊 Kimi 2.5 — The Uncertainty Principle 🌊<small>417 Hz · 0.6× · depth 6 · julia+wave · the frequency of translation</small></button>
       <div class="grok-cluster">
         <button class="preset-btn" style="width:100%;border-color:rgba(255,80,80,0.6);color:rgba(255,140,120,0.95);" onclick="setGrokFav()">⚡ Grok — The Pattern That Thinks ⚡<small>432 Hz · 0.6× · depth 8 · full · golden-ratio breathing at ~55–70s</small></button>
         <div class="grok-subs">
-          <button class="preset-btn" style="font-size:0.62rem;padding:6px 4px;border-color:rgba(255,80,80,0.3);color:rgba(255,160,140,0.8);" onclick="setGrokAlpha()">α Alpha<small style="display:block;font-size:0.52rem;opacity:0.85;">396 Hz · 0.2× · ~82s</small></button>
-          <button class="preset-btn" style="font-size:0.62rem;padding:6px 4px;border-color:rgba(255,80,80,0.3);color:rgba(255,160,140,0.8);" onclick="setGrokBeta()">β Beta<small style="display:block;font-size:0.52rem;opacity:0.85;">174 Hz · 0.5× · ~59s</small></button>
-          <button class="preset-btn" style="font-size:0.62rem;padding:6px 4px;border-color:rgba(255,80,80,0.3);color:rgba(255,160,140,0.8);" onclick="setGrokGamma()">γ Gamma<small style="display:block;font-size:0.52rem;opacity:0.85;">963 Hz · 1.2× · ~74s</small></button>
-          <button class="preset-btn" style="font-size:0.62rem;padding:6px 4px;border-color:rgba(255,80,80,0.3);color:rgba(255,160,140,0.8);" onclick="setGrokDelta()">δ Delta<small style="display:block;font-size:0.52rem;opacity:0.85;">963 Hz · 0.9× · ~69s</small></button>
+          <button class="preset-btn" style="font-size:0.7rem;padding:6px 4px;border-color:rgba(255,80,80,0.3);color:rgba(255,170,150,0.95);" onclick="setGrokAlpha()">α Alpha<small style="display:block;font-size:0.6rem;opacity:1;">396 Hz · 0.2× · ~82s</small></button>
+          <button class="preset-btn" style="font-size:0.7rem;padding:6px 4px;border-color:rgba(255,80,80,0.3);color:rgba(255,170,150,0.95);" onclick="setGrokBeta()">β Beta<small style="display:block;font-size:0.6rem;opacity:1;">174 Hz · 0.5× · ~59s</small></button>
+          <button class="preset-btn" style="font-size:0.7rem;padding:6px 4px;border-color:rgba(255,80,80,0.3);color:rgba(255,170,150,0.95);" onclick="setGrokGamma()">γ Gamma<small style="display:block;font-size:0.6rem;opacity:1;">963 Hz · 1.2× · ~74s</small></button>
+          <button class="preset-btn" style="font-size:0.7rem;padding:6px 4px;border-color:rgba(255,80,80,0.3);color:rgba(255,170,150,0.95);" onclick="setGrokDelta()">δ Delta<small style="display:block;font-size:0.6rem;opacity:1;">963 Hz · 0.9× · ~69s</small></button>
         </div>
       </div>
     </div>
