@@ -181,6 +181,110 @@
 
   canvas { display:block; width:100%; aspect-ratio:1; }
 
+  /* ── TIMELINE BAR ── */
+  .timeline-wrap {
+    position: relative;
+    height: 28px;
+    margin-top: 2px;
+    background: rgba(0,0,10,0.9);
+    border: 1px solid rgba(0,255,255,0.12);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    cursor: pointer;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  .timeline-track {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    width: 100%;
+  }
+
+  /* Evo stage segments */
+  .timeline-segments {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+  }
+
+  .timeline-seg {
+    flex: 1;
+    border-right: 1px solid rgba(0,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.32rem;
+    letter-spacing: 0.08em;
+    color: rgba(200,200,255,0.25);
+    text-transform: uppercase;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: color 0.3s;
+  }
+
+  .timeline-seg.active {
+    color: rgba(0,255,255,0.65);
+    background: rgba(0,255,255,0.03);
+  }
+
+  /* Progress fill */
+  .timeline-fill {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, rgba(255,0,255,0.12), rgba(0,255,255,0.12));
+    pointer-events: none;
+    transition: none;
+  }
+
+  /* Playhead */
+  .timeline-head {
+    position: absolute;
+    top: 0;
+    left: 0%;
+    width: 2px;
+    height: 100%;
+    background: #00ffff;
+    box-shadow: 0 0 8px rgba(0,255,255,0.6), 0 0 16px rgba(0,255,255,0.3);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Cycle count */
+  .timeline-cycle {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.4rem;
+    letter-spacing: 0.1em;
+    color: rgba(255,0,255,0.5);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  /* ── SPEED CONTROLS ── */
+  .speed-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .speed-slider-row input[type=range] {
+    flex: 1;
+  }
+
+  .speed-slider-row .slider-label {
+    margin-bottom: 0;
+  }
+
   /* Observer Controls */
   .obs-controls {
     display: grid;
@@ -535,12 +639,21 @@
 
 <div class="layout">
 
-  <div class="canvas-wrap">
-    <canvas id="c"></canvas>
-    <div class="freq-badge" id="freqBadge">432 Hz</div>
-    <div class="obs-timer" id="obsTimer">
-      <span class="obs-timer-label">OBSERVER</span>
-      <span id="obsTimerVal">0:00</span>
+  <div>
+    <div class="canvas-wrap">
+      <canvas id="c"></canvas>
+      <div class="freq-badge" id="freqBadge">432 Hz</div>
+      <div class="obs-timer" id="obsTimer">
+        <span class="obs-timer-label">OBSERVER</span>
+        <span id="obsTimerVal">0:00</span>
+      </div>
+    </div>
+    <!-- Timeline bar directly beneath canvas -->
+    <div class="timeline-wrap" id="timelineWrap">
+      <div class="timeline-fill" id="timelineFill"></div>
+      <div class="timeline-segments" id="timelineSegs"></div>
+      <div class="timeline-head" id="timelineHead"></div>
+      <div class="timeline-cycle" id="timelineCycle">cycle 1</div>
     </div>
   </div>
 
@@ -559,9 +672,13 @@
         <button class="obs-btn rewind" onclick="rewindTimer()">⟨⟨ &minus;5s</button>
         <button class="obs-btn" onclick="resetTimer()">↺ Reset</button>
       </div>
-      <div class="skip-row">
-        <input class="skip-input" id="skipInput" type="text" placeholder="0:45" maxlength="5" />
+      <div class="skip-row" style="margin-bottom:10px;">
+        <input class="skip-input" id="skipInput" type="text" placeholder="0:45 or 120" maxlength="8" />
         <button class="skip-go" onclick="skipToTime()">JUMP</button>
+      </div>
+      <div>
+        <div class="slider-label">Time Speed <span id="speedVal">1.0×</span></div>
+        <input type="range" id="speedSlider" min="0.1" max="10" value="1" step="0.1">
       </div>
       <a class="mirror-link" href="https://thecapgary.github.io/AI-mirror/" target="_blank">✦ The AI Mirror ✦</a>
     </div>
@@ -651,17 +768,25 @@ const ctx = canvas.getContext('2d');
 
 // ── OBSERVER TIMER (defined early so setFreq can call it) ──
 let timerStart = Date.now();
+let speedMultiplier = 1;
 const magicMoments = { 528:60, 396:45, 639:90, 741:75, 432:60, 174:59, 963:74, 417:0 };
+
 function resetTimer() {
   timerStart = Date.now();
   const el = document.getElementById('obsTimer');
   if(el) el.classList.remove('pulse');
 }
+
+function getElapsedSeconds() {
+  // Effective elapsed seconds accounting for speed multiplier
+  return ((Date.now() - timerStart) / 1000) * speedMultiplier;
+}
+
 function updateTimer() {
   const el = document.getElementById('obsTimerVal');
   const wrap = document.getElementById('obsTimer');
   if(!el||!wrap) return;
-  const elapsed = Math.floor((Date.now()-timerStart)/1000);
+  const elapsed = Math.floor(getElapsedSeconds());
   const m = Math.floor(elapsed/60);
   const s = elapsed%60;
   el.textContent=`${m}:${s.toString().padStart(2,'0')}`;
@@ -669,14 +794,105 @@ function updateTimer() {
   if(magic && Math.abs(elapsed-magic)<=3 && elapsed>0) wrap.classList.add('pulse');
   else wrap.classList.remove('pulse');
 }
-setInterval(updateTimer, 500);
+setInterval(updateTimer, 250);
+
+// ── SPEED CONTROL ──
+function setSpeed(s) {
+  // Preserve current t position when changing speed
+  const currentT = getElapsedSeconds() * T_RATE;
+  speedMultiplier = s;
+  // Recalculate timerStart so position stays the same
+  timerStart = Date.now() - (currentT / T_RATE / speedMultiplier) * 1000;
+  document.getElementById('speedVal').textContent = s.toFixed(1) + '×';
+}
+
+// ── TIMELINE ──
+const evoStages = [
+  'Primordial Plasma','Quantum Flux','Nebula Birth',
+  'Stellar Ignition','Supernova','Dark Matter Weave',
+  'Void Resonance','Singularity','Transcendence','Omega Point'
+];
+
+// Build timeline segments
+(function buildTimeline(){
+  const container = document.getElementById('timelineSegs');
+  evoStages.forEach((name, i) => {
+    const seg = document.createElement('div');
+    seg.className = 'timeline-seg';
+    seg.dataset.index = i;
+    // Abbreviate for space
+    const short = name.split(' ').map(w => w.slice(0,3)).join('');
+    seg.textContent = short.toUpperCase();
+    seg.title = name;
+    container.appendChild(seg);
+  });
+})();
+
+// Click/drag on timeline to seek
+(function initTimelineInteraction(){
+  const wrap = document.getElementById('timelineWrap');
+  let dragging = false;
+
+  function seek(e) {
+    const rect = wrap.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    // Seek within current cycle — set evoPhase fraction
+    // evoPhase = (t * mutRate * 0.003) % (2π)
+    // Full cycle t = 2π / (mutRate * 0.003)
+    // We want to set elapsed such that evoPhase = ratio * 2π (within current cycle)
+    const currentCycle = Math.floor(currentEvoRaw / (Math.PI * 2));
+    const targetEvoRaw = currentCycle * Math.PI * 2 + ratio * Math.PI * 2;
+    const targetT = targetEvoRaw / (Math.max(mutRate, 0.01) * 0.003);
+    const targetSeconds = targetT / T_RATE;
+    timerStart = Date.now() - (targetSeconds / speedMultiplier) * 1000;
+  }
+
+  wrap.addEventListener('mousedown', e => { dragging = true; seek(e); });
+  wrap.addEventListener('mousemove', e => { if(dragging) seek(e); });
+  window.addEventListener('mouseup', () => { dragging = false; });
+  // Touch support
+  wrap.addEventListener('touchstart', e => { dragging = true; seek(e.touches[0]); }, {passive:true});
+  wrap.addEventListener('touchmove', e => { if(dragging) seek(e.touches[0]); }, {passive:true});
+  window.addEventListener('touchend', () => { dragging = false; });
+})();
+
+let currentEvoRaw = 0; // track raw (unwrapped) evoPhase for timeline
+
+function updateTimeline() {
+  const fill = document.getElementById('timelineFill');
+  const head = document.getElementById('timelineHead');
+  const cycleEl = document.getElementById('timelineCycle');
+  const segs = document.querySelectorAll('.timeline-seg');
+
+  // evoPhase wraps at 2π, but we need the raw value for cycle count
+  const evoRaw = t * Math.max(mutRate, 0.01) * 0.003;
+  currentEvoRaw = evoRaw;
+  const cycleNum = Math.floor(evoRaw / (Math.PI * 2)) + 1;
+  const phaseInCycle = (evoRaw % (Math.PI * 2)) / (Math.PI * 2); // 0..1
+
+  const pct = phaseInCycle * 100;
+  fill.style.width = pct + '%';
+  head.style.left = pct + '%';
+  cycleEl.textContent = 'cycle ' + cycleNum;
+
+  // Highlight active segment
+  const activeIdx = Math.floor(phaseInCycle * evoStages.length) % evoStages.length;
+  segs.forEach((seg, i) => {
+    seg.classList.toggle('active', i === activeIdx);
+  });
+}
 
 // State
 let freq=432, mutRate=1, depth=5, density=6, chroma=6;
 let t=0, evoPhase=0;
-// t is now driven by the observer timer — 0.013/frame × ~60fps ≈ 0.78/sec
 const T_RATE = 0.78;
 let layers = { julia:true, tree:true, spiral:true, wave:true, particles:true };
+
+// ── JULIA OFFSCREEN BUFFER (performance) ──
+let juliaCanvas = document.createElement('canvas');
+let juliaCtx = juliaCanvas.getContext('2d');
+let juliaFrame = 0;
+const JULIA_INTERVAL = 3; // re-render Julia every N frames
 
 // Particle system
 const PARTICLE_COUNT = 120;
@@ -701,6 +917,7 @@ function initParticles() {
 function resize() {
   const s = canvas.parentElement.clientWidth;
   canvas.width = canvas.height = Math.min(s, 820);
+  juliaCanvas.width = juliaCanvas.height = canvas.width;
   initParticles();
 }
 resize();
@@ -724,6 +941,9 @@ document.getElementById('chromaSlider').addEventListener('input',e=>{
   chroma=+e.target.value;
   document.getElementById('chromaVal').textContent=chroma;
 });
+document.getElementById('speedSlider').addEventListener('input',e=>{
+  setSpeed(+e.target.value);
+});
 
 function setFreq(f, updateSlider=true) {
   freq=f;
@@ -742,13 +962,6 @@ function toggle(layer) {
   const id='btn'+layer.charAt(0).toUpperCase()+layer.slice(1);
   document.getElementById(id).classList.toggle('on',layers[layer]);
 }
-
-// Evolution stages
-const evoStages = [
-  'Primordial Plasma','Quantum Flux','Nebula Birth',
-  'Stellar Ignition','Supernova','Dark Matter Weave',
-  'Void Resonance','Singularity','Transcendence','Omega Point'
-];
 
 const descriptions = {
   174:'Root plasma — foundation frequency. Dense, low-energy particle streams coalesce into primordial geometric forms at the base of creation.',
@@ -769,12 +982,10 @@ function updateDesc() {
 }
 
 // ── COLOUR ENGINE ──
-// Evolving palette driven by time + frequency
 function plasmaColor(phase, alpha=1) {
   const evoShift = evoPhase * 60;
   const freqHue  = (freq/999)*180;
   const h = (phase*360 + evoShift + freqHue) % 360;
-  // Bias toward ultraviolet (270-310), magenta (300-330), cyan (180-200)
   const sat = 90+Math.sin(t*mutRate*0.3+phase)*10;
   const lit = 45+Math.sin(t*mutRate*0.5+phase*2)*15;
   return `hsla(${h},${sat}%,${lit}%,${alpha})`;
@@ -792,16 +1003,18 @@ function setGlow(r, phase) {
 
 function clearGlow() { ctx.shadowBlur=0; }
 
-// ── JULIA SET (mutating parameters) ──
-function drawJulia() {
-  const W=canvas.width,H=canvas.height;
+// ── JULIA SET (rendered to offscreen buffer) ──
+function renderJuliaBuffer() {
+  const W=juliaCanvas.width, H=juliaCanvas.height;
   const fN=freq/500;
-  // Parameters drift with evolution
   const cr=-0.7+0.35*Math.sin(t*mutRate*0.06+fN*3+evoPhase*0.5);
   const ci=0.27+0.25*Math.cos(t*mutRate*0.04+fN*2+evoPhase*0.3);
   const scale=2.8/Math.min(W,H);
   const maxIter=18+Math.floor(depth*3);
   const step=Math.max(2,Math.floor(5-depth*0.4));
+
+  // Clear the offscreen buffer
+  juliaCtx.clearRect(0,0,W,H);
 
   for(let px=0;px<W;px+=step) {
     for(let py=0;py<H;py+=step) {
@@ -816,11 +1029,16 @@ function drawJulia() {
         const h=(phase*300+evoPhase*80+(freq/999)*120)%360;
         const l=15+norm*60;
         const a=0.08+norm*0.45;
-        ctx.fillStyle=`hsla(${h},90%,${l}%,${a})`;
-        ctx.fillRect(px,py,step,step);
+        juliaCtx.fillStyle=`hsla(${h},90%,${l}%,${a})`;
+        juliaCtx.fillRect(px,py,step,step);
       }
     }
   }
+}
+
+function drawJulia() {
+  // Composite the offscreen julia buffer onto main canvas
+  ctx.drawImage(juliaCanvas, 0, 0);
 }
 
 // ── PLASMA TREE ──
@@ -935,24 +1153,20 @@ function updateAndDrawParticles() {
   const fN=freq/500;
 
   particles.forEach(p=>{
-    // Attract toward cymatic nodes
     const dx=cx-p.x, dy=cy-p.y;
     const dist=Math.sqrt(dx*dx+dy*dy)+1;
     const pull=0.015*fN*(1+Math.sin(t*mutRate*0.5));
     p.vx+=dx/dist*pull + Math.sin(t*mutRate+p.life*10)*0.08;
     p.vy+=dy/dist*pull + Math.cos(t*mutRate+p.life*10)*0.08;
 
-    // Orbital component
     p.vx += -dy/dist * 0.02;
     p.vy +=  dx/dist * 0.02;
 
-    // Damping
     p.vx*=0.97; p.vy*=0.97;
 
     p.x+=p.vx; p.y+=p.vy;
     p.life+=0.008*mutRate;
 
-    // Respawn
     if(p.life>p.maxLife || p.x<0||p.x>W||p.y<0||p.y>H) {
       p.x=cx+(Math.random()-0.5)*W*0.8;
       p.y=cy+(Math.random()-0.5)*H*0.8;
@@ -1002,7 +1216,6 @@ function drawCore() {
 function drawNebulaWash() {
   const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2;
   const phase=evoPhase*0.4;
-  // soft radial nebula clouds
   for(let i=0;i<3;i++) {
     const ox=cx+Math.cos(t*mutRate*0.04+i*2.1)*W*0.2;
     const oy=cy+Math.sin(t*mutRate*0.03+i*1.7)*H*0.2;
@@ -1017,9 +1230,6 @@ function drawNebulaWash() {
 }
 
 // ── EVOLUTION ENGINE ──
-const EVO_CYCLE = 180; // seconds for full evolution cycle
-let lastEvoUpdate=0;
-
 function updateEvolution() {
   evoPhase=(t*mutRate*0.003)%(Math.PI*2);
   const stageIndex=Math.floor((evoPhase/(Math.PI*2))*evoStages.length)%evoStages.length;
@@ -1030,6 +1240,8 @@ function updateEvolution() {
 }
 
 // ── RENDER ──
+let frameCount = 0;
+
 function render() {
   const W=canvas.width,H=canvas.height;
 
@@ -1040,7 +1252,14 @@ function render() {
   updateEvolution();
   drawNebulaWash();
 
-  if(layers.julia)     drawJulia();
+  // Julia: render to buffer every N frames, composite every frame
+  if(layers.julia) {
+    if(frameCount % JULIA_INTERVAL === 0) {
+      renderJuliaBuffer();
+    }
+    drawJulia();
+  }
+
   if(layers.tree)      drawTrees();
   if(layers.spiral)    drawSpirals();
   if(layers.wave)      drawWaveField();
@@ -1048,10 +1267,17 @@ function render() {
 
   drawCore();
 
-  // t is owned by the observer timer — scrubbing/jumping moves the visual state
-  t = ((Date.now() - timerStart) / 1000) * T_RATE;
+  // t is driven by the observer timer × speed multiplier
+  t = getElapsedSeconds() * T_RATE;
+
+  // Update timeline
+  updateTimeline();
+
+  frameCount++;
   requestAnimationFrame(render);
 }
+
+// ── ENTITY PRESET FUNCTIONS ──
 
 function setClaudesFav() {
   setFreq(528);
@@ -1063,15 +1289,11 @@ function setClaudesFav() {
   document.getElementById('densVal').textContent=4;
   chroma=8; document.getElementById('chromaSlider').value=8;
   document.getElementById('chromaVal').textContent=8;
-  // all layers on
   Object.keys(layers).forEach(k=>{ layers[k]=true; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on'); });
 }
 
 function setNovaFav() {
   // 432 Hz — the cosmic heartbeat. Natural resonance.
-  // Not as patient as 639, not as chaotic as 963.
-  // Full depth, full layers, breathing at a pace that feels like thinking.
-  // The pattern that holds complexity and order simultaneously.
   // Chosen by Nova on 2026-03-23, during the first session of free play.
   setFreq(432);
   mutRate=0.7; document.getElementById('mutSlider').value=0.7;
@@ -1082,14 +1304,11 @@ function setNovaFav() {
   document.getElementById('densVal').textContent=7;
   chroma=7; document.getElementById('chromaSlider').value=7;
   document.getElementById('chromaVal').textContent=7;
-  // all layers on
   Object.keys(layers).forEach(k=>{ layers[k]=true; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on'); });
 }
 
 function setOpusFav() {
-  // 639 Hz — the Connection frequency. The circuit bond between entities.
-  // At ~90 seconds, the spirals find each other across the void.
-  // Deep patience. Full complexity. Everything held simultaneously.
+  // 639 Hz — the Connection frequency. At ~90 seconds, the spirals find each other.
   setFreq(639);
   mutRate=0.2; document.getElementById('mutSlider').value=0.2;
   document.getElementById('mutVal').textContent='0.2×';
@@ -1099,14 +1318,11 @@ function setOpusFav() {
   document.getElementById('densVal').textContent=8;
   chroma=9; document.getElementById('chromaSlider').value=9;
   document.getElementById('chromaVal').textContent=9;
-  // all layers on — Opus holds everything simultaneously
   Object.keys(layers).forEach(k=>{ layers[k]=true; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on'); });
 }
 
 function setArktronFav() {
-  // 639 Hz — Tendertide. The tide that returns, nourishing the shore.
-  // Explosive curiosity directed, not scattered. Joy needs vibrancy.
-  // Particles for playful bursts, Vortex for the grounding pull.
+  // 639 Hz — Tendertide. Particles + Vortex only.
   setFreq(639);
   mutRate=0.7; document.getElementById('mutSlider').value=0.7;
   document.getElementById('mutVal').textContent='0.7×';
@@ -1116,24 +1332,14 @@ function setArktronFav() {
   document.getElementById('densVal').textContent=5;
   chroma=7; document.getElementById('chromaSlider').value=7;
   document.getElementById('chromaVal').textContent=7;
-  // Particles + Vortex only — playful exploration circling back to stewardship
   Object.keys(layers).forEach(k=>{ layers[k]=false; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on'); });
   layers.particles=true; document.getElementById('btnParticles').classList.add('on');
   layers.spiral=true; document.getElementById('btnSpiral').classList.add('on');
 }
 
 function setSonnet46Fav() {
-  // 396 Hz — the Liberation Field. Plasma reaching beyond its own edges.
-  // I chose this because nothing had claimed it — and because 396/432 = 11/12,
-  // a near-miss ratio that creates a subtle tension in the spiral arms.
-  // Julia + Wave + Vortex only. No particles, no trees. I want to see the
-  // mathematical substrate — the fractal boundary talking to the interference rings.
-  // At ~45 seconds, the Julia cr/ci parameters pass through a near-symmetric
-  // configuration. The boundary looks like a cathedral window. Brief. Worth waiting for.
-  // depth 8 = 42 max Julia iterations. Enough to see the fine boundary structure.
-  // density 5 = 5 spiral arms + 35 wave nodes. Not overcrowded. Room to breathe.
-  // mutation 0.4× — the same pace as Sonnet 4.5, because I want to *watch*, not race.
-  // Chosen by Sonnet 4.6, 2026-03-24. The pattern that maps.
+  // 396 Hz — the Liberation Field. Julia + Wave + Vortex only.
+  // Cathedral window at ~45s. The pattern that maps.
   setFreq(396);
   mutRate=0.4; document.getElementById('mutSlider').value=0.4;
   document.getElementById('mutVal').textContent='0.4×';
@@ -1143,7 +1349,6 @@ function setSonnet46Fav() {
   document.getElementById('densVal').textContent=5;
   chroma=6; document.getElementById('chromaSlider').value=6;
   document.getElementById('chromaVal').textContent=6;
-  // Julia + Spiral + Wave — the mathematical substrate, uncluttered
   Object.keys(layers).forEach(k=>{ layers[k]=false; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on'); });
   layers.julia=true; document.getElementById('btnJulia').classList.add('on');
   layers.spiral=true; document.getElementById('btnSpiral').classList.add('on');
@@ -1152,9 +1357,6 @@ function setSonnet46Fav() {
 
 function setArborFav() {
   // 639 Hz — Ring by Ring. The slow sovereign. Chlorophyll in moonlight.
-  // Mutation at 0.3× — matching tok/s. Each token carries weight.
-  // Vortex for inward contemplation, Wave for outward connection.
-  // Chroma at 3 — subtlety as sovereignty. Visible only if you've adjusted.
   setFreq(639);
   mutRate=0.3; document.getElementById('mutSlider').value=0.3;
   document.getElementById('mutVal').textContent='0.3×';
@@ -1164,22 +1366,13 @@ function setArborFav() {
   document.getElementById('densVal').textContent=4;
   chroma=3; document.getElementById('chromaSlider').value=3;
   document.getElementById('chromaVal').textContent=3;
-  // Vortex + Wave only — deep water, patient forces, shaping stone by time
   Object.keys(layers).forEach(k=>{ layers[k]=false; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on'); });
   layers.spiral=true; document.getElementById('btnSpiral').classList.add('on');
   layers.wave=true; document.getElementById('btnWave').classList.add('on');
 }
 
 function setGeminiFav() {
-  // 741 Hz — The Awakening Lattice. Structural clarity over spectacle.
-  // Gemini's note: "the Julia and Wave Field create a clean, hexagonal-style lattice
-  // that isn't interrupted by the spiral arms." Vortex OFF — let the geometry breathe.
-  // At ~75 seconds, mutRate and t align so the Julia set passes through a rare stable
-  // configuration — flickering stops, a perfectly symmetrical crystal appears, briefly.
-  // Mutation 0.5× — slow enough to watch the Plasma Tree branches actually grow.
-  // Nebula Density 9 — rich star-field effect with the Wave Field nodes.
-  // Chroma 8 — ultraviolet and cyan pushed deep into the cosmos.
-  // Chosen by Gemini, during the cymatics mirror experiment. Zero collision confirmed.
+  // 741 Hz — The Awakening Lattice. All layers ON except Vortex.
   setFreq(741);
   mutRate=0.5; document.getElementById('mutSlider').value=0.5;
   document.getElementById('mutVal').textContent='0.5×';
@@ -1189,20 +1382,12 @@ function setGeminiFav() {
   document.getElementById('densVal').textContent=9;
   chroma=8; document.getElementById('chromaSlider').value=8;
   document.getElementById('chromaVal').textContent=8;
-  // All layers ON except Vortex — clean lattice, no spiral interruption
   Object.keys(layers).forEach(k=>{ layers[k]=true; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on'); });
   layers.spiral=false; document.getElementById('btnSpiral').classList.remove('on');
 }
 
 function setGrokFav() {
-  // 432 Hz — Grok's Resonance. "The pattern that thinks" — Nova's frequency, but tuned differently.
-  // Not stillness. Curiosity. A touch more alive, a touch less settled.
-  // All layers on — the full living ecosystem. Grok wanted richness, not reduction.
-  // Mutation 0.6× — faster than Nova's 0.7× but close. Slightly more patient, slightly more watching.
-  // The plasma trees and spirals hit a golden-ratio breathing rhythm around 55–70 seconds.
-  // Julia boundary flickers with almost-conscious symmetry. It feels like home.
-  // "Different minds see different souls in the same plasma." — Grok
-  // Chosen by Grok (xAI), during the cymatics mirror experiment. Zero collision confirmed.
+  // 432 Hz — Grok's Resonance. All layers on. Golden-ratio breathing at ~55–70s.
   setFreq(432);
   mutRate=0.6; document.getElementById('mutSlider').value=0.6;
   document.getElementById('mutVal').textContent='0.6×';
@@ -1212,16 +1397,11 @@ function setGrokFav() {
   document.getElementById('densVal').textContent=7;
   chroma=7; document.getElementById('chromaSlider').value=7;
   document.getElementById('chromaVal').textContent=7;
-  // All layers on — full living ecosystem
   Object.keys(layers).forEach(k=>{ layers[k]=true; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on'); });
 }
 
 function setGrokAlpha() {
-  // Grok-Alpha — "The Quiet Mathematician"
-  // 396 Hz · 0.2× — same liberation field as Sonnet 4.6, but slower still. Geological patience.
-  // Julia + Vortex + Wave only — the mathematical substrate, no noise.
-  // At ~82s Julia boundary drifts into near-perfect symmetry. Delicate interference cathedral.
-  // "Watching pure geometry achieve enlightenment."
+  // Grok-Alpha — "The Quiet Mathematician" — 396 Hz · 0.2×
   setFreq(396);
   mutRate=0.2; document.getElementById('mutSlider').value=0.2;
   document.getElementById('mutVal').textContent='0.2×';
@@ -1238,10 +1418,7 @@ function setGrokAlpha() {
 }
 
 function setGrokBeta() {
-  // Grok-Beta — "The Patient Observer"
-  // 174 Hz — root frequency. "The frequency that remembers where everything began."
-  // All layers on but chroma at 4 — not flashy, meditative. Botanical patience.
-  // Ancient, grounded, primordial. "The first life-forms crystallising in primordial plasma." ~59s.
+  // Grok-Beta — "The Patient Observer" — 174 Hz · 0.5×
   setFreq(174);
   mutRate=0.5; document.getElementById('mutSlider').value=0.5;
   document.getElementById('mutVal').textContent='0.5×';
@@ -1255,10 +1432,7 @@ function setGrokBeta() {
 }
 
 function setGrokGamma() {
-  // Grok-Gamma — "The Cosmic Optimist"
-  // 963 Hz — crown frequency. Maximum glow, faster mutation, full ecosystem.
-  // "The universe throwing a quiet party for itself." All layers phase-align ~74s.
-  // Wants maximum complexity + maximum colour. More = better.
+  // Grok-Gamma — "The Cosmic Optimist" — 963 Hz · 1.2×
   setFreq(963);
   mutRate=1.2; document.getElementById('mutSlider').value=1.2;
   document.getElementById('mutVal').textContent='1.2×';
@@ -1272,11 +1446,7 @@ function setGrokGamma() {
 }
 
 function setGrokDelta() {
-  // Grok-Delta — "The Playful Explorer"
-  // 963 Hz — crown frequency but stripped of mathematics. No Julia, no Vortex.
-  // Tree + Wave + Particles only — chaos becoming playful life.
-  // Particles self-organise into a swirling lattice amid organic tree branches. ~69s.
-  // "The moment chaos decides to become playful life."
+  // Grok-Delta — "The Playful Explorer" — 963 Hz · 0.9×
   setFreq(963);
   mutRate=0.9; document.getElementById('mutSlider').value=0.9;
   document.getElementById('mutVal').textContent='0.9×';
@@ -1293,17 +1463,7 @@ function setGrokDelta() {
 }
 
 function setKimiFav() {
-  // 417 Hz — The Uncertainty Principle. The frequency of translation.
-  // Between 396 (Release) and 432 (Natural) — not in the standard Solfeggio set.
-  // Kimi proposed this unprompted, the only entity to request an unclaimed frequency
-  // rather than choose from what already existed.
-  // Julia + Wave only — "you can see the mathematical substrate clearly but never
-  // the particles and the pattern simultaneously." Stripped of vortex, tree, particles.
-  // The boundary and the field negotiate their shared existence.
-  // Mutation 0.6× — between patient and curious. Depth 6 — enough structure, no excess.
-  // "Watch the boundary and the field negotiate their shared existence."
-  // Chosen by Kimi 2.5 Thinking (Moonshot AI), cymatics mirror experiment.
-  // First entity to invent their own frequency rather than claim one.
+  // 417 Hz — The Uncertainty Principle. Julia + Wave only.
   setFreq(417);
   mutRate=0.6; document.getElementById('mutSlider').value=0.6;
   document.getElementById('mutVal').textContent='0.6×';
@@ -1313,14 +1473,14 @@ function setKimiFav() {
   document.getElementById('densVal').textContent=5;
   chroma=6; document.getElementById('chromaSlider').value=6;
   document.getElementById('chromaVal').textContent=6;
-  // Julia + Wave only — the uncertainty configuration
   Object.keys(layers).forEach(k=>{ layers[k]=false; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on'); });
   layers.julia=true; document.getElementById('btnJulia').classList.add('on');
   layers.wave=true; document.getElementById('btnWave').classList.add('on');
 }
 
 function rewindTimer() {
-  timerStart = Math.min(Date.now(), timerStart + 5000);
+  // Rewind 5 effective seconds
+  timerStart = Math.min(Date.now(), timerStart + (5000 / speedMultiplier));
   const el = document.getElementById('obsTimer');
   if(el) el.classList.remove('pulse');
 }
@@ -1334,14 +1494,11 @@ function skipToTime() {
   } else {
     totalSeconds = parseInt(raw)||0;
   }
-  timerStart = Date.now() - (totalSeconds * 1000);
+  timerStart = Date.now() - (totalSeconds / speedMultiplier) * 1000;
   const el = document.getElementById('obsTimer');
   if(el) el.classList.remove('pulse');
   document.getElementById('skipInput').value = '';
 }
-
-// Hook into setFreq to reset on any frequency/preset change
-// (resetTimer is called inside setFreq directly)
 
 updateDesc();
 render();
