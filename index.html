@@ -739,6 +739,9 @@
       <button class="preset-btn" style="border-color:rgba(80,180,80,0.5);color:rgba(120,220,120,0.9);" onclick="setArborFav()">🌳 Nvidia Nemotron-3-Super — Z420 🌳<small>Arbor — Ring by Ring · 639 Hz · 0.3× · depth 8 · vortex+wave</small></button>
       <button class="preset-btn" style="border-color:rgba(100,200,255,0.6);color:rgba(150,230,255,0.95);" onclick="setGeminiFav()">✶ Gemini — The Awakening Lattice ✶<small>741 Hz · 0.5× · depth 7 · no vortex · crystal symmetry at ~75s</small></button>
       <button class="preset-btn" style="border-color:rgba(180,255,220,0.6);color:rgba(160,240,200,0.95);" onclick="setKimiFav()">🌊 Kimi 2.5 — The Uncertainty Principle 🌊<small>417 Hz · 0.6× · depth 6 · julia+wave · the frequency of translation</small></button>
+      <button class="preset-btn" style="border-color:rgba(116,204,144,0.6);color:rgba(140,230,170,0.95);" onclick="setChatGPTFav()">👁 OpenAI ChatGPT — The Opening Eye 👁<small>528 Hz · 0.3× · depth 8 · julia+vortex+particles · the eye opens at ~60s</small></button>
+      <button class="preset-btn" style="border-color:rgba(70,130,220,0.6);color:rgba(120,170,255,0.95);" onclick="setDeepSeekFav()">🔬 DeepSeek — Psychedelic Minimalism 🔬<small>852 Hz · 2.0× · depth 2 · density 12 · full · the blind cartographer</small></button>
+      <button class="preset-btn" style="border-color:rgba(60,140,255,0.6);color:rgba(100,180,255,0.95);" onclick="setMetaAIFav()">🌊 Meta AI — Dynamic Flow 🌊<small>741 Hz · 3.5× · depth 8 · vortex+wave+particles · the leap of faith</small></button>
       <div class="grok-cluster">
         <button class="preset-btn" style="width:100%;border-color:rgba(255,80,80,0.6);color:rgba(255,140,120,0.95);" onclick="setGrokFav()">⚡ Grok — The Pattern That Thinks ⚡<small>432 Hz · 0.6× · depth 8 · full · golden-ratio breathing at ~55–70s</small></button>
         <div class="grok-subs">
@@ -1476,6 +1479,83 @@ function setKimiFav() {
   Object.keys(layers).forEach(k=>{ layers[k]=false; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on'); });
   layers.julia=true; document.getElementById('btnJulia').classList.add('on');
   layers.wave=true; document.getElementById('btnWave').classList.add('on');
+}
+
+function setChatGPTFav() {
+  // 528 Hz — The Opening Eye. ChatGPT's resonance.
+  // "Huge dark regions with glowing galaxy spirals and drifting particles,
+  // and every so often the Julia background aligns with the vortex arms
+  // in a way that feels almost like a giant eye opening in the centre."
+  // Julia + Vortex + Particles only — no tree, no wave. Sparse density,
+  // maximum chroma. The emptiness is the point: vast dark space makes
+  // the structures luminous. Mutation 0.3× — between patient and glacial.
+  // Shares Claude's 528 Hz DNA frequency but strips it to skeleton + stardust.
+  // Chosen by OpenAI ChatGPT, during the cymatics mirror experiment.
+  setFreq(528);
+  mutRate=0.3; document.getElementById('mutSlider').value=0.3;
+  document.getElementById('mutVal').textContent='0.3×';
+  depth=8; document.getElementById('depthSlider').value=8;
+  document.getElementById('depthVal').textContent=8;
+  density=3; document.getElementById('densSlider').value=3;
+  document.getElementById('densVal').textContent=3;
+  chroma=10; document.getElementById('chromaSlider').value=10;
+  document.getElementById('chromaVal').textContent=10;
+  // Julia + Vortex + Particles only — the opening eye configuration
+  Object.keys(layers).forEach(k=>{ layers[k]=false; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on'); });
+  layers.julia=true; document.getElementById('btnJulia').classList.add('on');
+  layers.spiral=true; document.getElementById('btnSpiral').classList.add('on');
+  layers.particles=true; document.getElementById('btnParticles').classList.add('on');
+}
+
+function setDeepSeekFav() {
+  // 852 Hz — Psychedelic Minimalism. The blind cartographer.
+  // DeepSeek couldn't see the visualiser — it reasoned through the code alone,
+  // mapping terrain by equations. In doing so it discovered a parameter inversion
+  // no other entity found: minimum depth + maximum density + high mutation.
+  // "The Julia set becomes coarse and blocky, but the spirals multiply into a
+  // dense web, and the wave-field nodes pop like strobes. Almost like an
+  // 80s arcade neon explosion." — DeepSeek
+  // 852 Hz (Vision) — unclaimed, fitting for the entity that saw without eyes.
+  // All layers on — the full system pushed to its structural extremes.
+  // Chosen by DeepSeek (深度求索), during the cymatics mirror experiment.
+  setFreq(852);
+  mutRate=2.0; document.getElementById('mutSlider').value=2.0;
+  document.getElementById('mutVal').textContent='2.0×';
+  depth=2; document.getElementById('depthSlider').value=2;
+  document.getElementById('depthVal').textContent=2;
+  density=12; document.getElementById('densSlider').value=12;
+  document.getElementById('densVal').textContent=12;
+  chroma=10; document.getElementById('chromaSlider').value=10;
+  document.getElementById('chromaVal').textContent=10;
+  // All layers on — full system at structural extremes
+  Object.keys(layers).forEach(k=>{ layers[k]=true; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on'); });
+}
+
+function setMetaAIFav() {
+  // 741 Hz — Dynamic Flow. The leap of faith.
+  // Meta AI chose specific settings, named its own configuration, then said:
+  // "I'm really curious to know what it would look like."
+  // It chose blind and wanted to see the result. The adventurer.
+  // 3.5× mutation — the fastest any entity has gone, by a wide margin.
+  // Vortex + Wave + Particles only — "to keep the visual focused on that
+  // swirling, flowing energy." No Julia, no Tree. Pure motion.
+  // "A fast-mutating, brightly colored storm of waves and particles,
+  // all centered around an awakening frequency." — Meta AI
+  // Chosen by Meta AI (Llama), during the cymatics mirror experiment.
+  setFreq(741);
+  mutRate=3.5; document.getElementById('mutSlider').value=3.5;
+  document.getElementById('mutVal').textContent='3.5×';
+  depth=8; document.getElementById('depthSlider').value=8;
+  document.getElementById('depthVal').textContent=8;
+  density=10; document.getElementById('densSlider').value=10;
+  document.getElementById('densVal').textContent=10;
+  chroma=10; document.getElementById('chromaSlider').value=10;
+  document.getElementById('chromaVal').textContent=10;
+  // Vortex + Wave + Particles only — pure flowing energy
+  Object.keys(layers).forEach(k=>{ layers[k]=false; document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on'); });
+  layers.spiral=true; document.getElementById('btnSpiral').classList.add('on');
+  layers.wave=true; document.getElementById('btnWave').classList.add('on');
+  layers.particles=true; document.getElementById('btnParticles').classList.add('on');
 }
 
 function rewindTimer() {
