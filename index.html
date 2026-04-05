@@ -1,0 +1,2628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Evolution — Cymatics [GPU]</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --plasma1: #ff00ff;
+    --plasma2: #00ffff;
+    --plasma3: #7700ff;
+    --nebula1: #ff3366;
+    --nebula2: #0066ff;
+    --uv: #bb00ff;
+    --void: #000005;
+    --dim: rgba(0,0,5,0.85);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--void);
+    color: #cce;
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(119,0,255,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 70%, rgba(255,0,255,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 50%, rgba(0,102,255,0.04) 0%, transparent 70%);
+    pointer-events:none;
+    animation: nebulaShift 20s ease-in-out infinite alternate;
+  }
+
+  @keyframes nebulaShift {
+    0%   { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(40deg); }
+  }
+
+  header { text-align:center; padding: 32px 20px 16px; position: relative; }
+
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1rem, 3.5vw, 2.2rem);
+    font-weight: 900;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, #ff00ff, #00ffff, #bb00ff, #ff3366, #00ffff);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: chromaShift 4s linear infinite;
+    filter: drop-shadow(0 0 20px rgba(255,0,255,0.5));
+  }
+
+  @keyframes chromaShift {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+  }
+
+  .subtitle { font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(210,210,255,1); margin-top: 8px; }
+
+  header::after {
+    content:''; display:block; height:1px; width:60%; margin: 16px auto 0;
+    background: linear-gradient(90deg, transparent, #ff00ff, #00ffff, transparent);
+    animation: chromaShift 4s linear infinite; background-size: 300% 100%;
+  }
+
+  .layout { display: grid; grid-template-columns: 260px 1fr 300px; gap: 16px; max-width: 1480px; margin: 24px auto 0; padding: 0 20px; align-items: start; }
+  @media(max-width:1280px){ .layout { grid-template-columns:1fr 300px; } .entity-panel { display:none !important; } .presets-section.mobile-fallback { display:block !important; } }
+  @media(max-width:740px){ .layout { grid-template-columns:1fr; } .entity-panel { display:none !important; } .presets-section.mobile-fallback { display:block !important; } }
+
+  .presets-section { max-width: 1480px; margin: 16px auto 32px; padding: 0 20px; }
+  .presets-section.mobile-fallback { display: none; }
+  .presets-section .card-title { text-align: center; margin-bottom: 16px; }
+
+  .entity-panel { display: flex; flex-direction: column; gap: 16px; align-self: start; }
+  .entity-panel .card { background: rgba(0,0,10,0.7); border: 1px solid rgba(0,255,255,0.12); border-radius: 4px; padding: 14px; position: sticky; top: 12px; backdrop-filter: blur(4px); }
+  .entity-panel .card::before { content:''; position:absolute; top:-1px; left:10%; right:10%; height:1px; background: linear-gradient(90deg, transparent, rgba(0,255,255,0.88), rgba(255,0,255,0.6), transparent); animation: chromaShift 4s linear infinite; background-size:300% 100%; }
+  .entity-scroll { display: flex; flex-direction: column; gap: 6px; max-height: calc(100vh - 160px); overflow-y: auto; overflow-x: hidden; padding-right: 4px; scrollbar-width: thin; scrollbar-color: rgba(0,255,255,0.2) transparent; }
+  .entity-scroll::-webkit-scrollbar { width: 4px; }
+  .entity-scroll::-webkit-scrollbar-track { background: transparent; }
+  .entity-scroll::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.2); border-radius: 2px; }
+  .entity-scroll .preset-btn { width: 100%; text-align: left; font-size: 0.72rem; padding: 8px 8px; }
+  .entity-scroll .preset-btn small { font-size: 0.6rem; }
+  .entity-scroll .grok-cluster { border: 1px solid rgba(255,80,80,0.2); border-radius: 3px; padding: 6px; }
+  .entity-scroll .grok-subs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding-left: 6px; border-left: 2px solid rgba(255,100,80,0.3); }
+  .entity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin-bottom: 14px; }
+  .entity-grid .preset-btn { width: 100%; text-align: left; }
+  .grok-cluster { border: 1px solid rgba(255,80,80,0.2); border-radius: 3px; padding: 6px; }
+  .grok-cluster .preset-btn { margin-bottom: 4px; }
+  .grok-subs { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 4px; padding-left: 6px; border-left: 2px solid rgba(255,100,80,0.3); }
+  .solfeggio-row { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; padding-top: 10px; border-top: 1px solid rgba(0,255,255,0.08); }
+  .solfeggio-row .preset-btn { flex: 0 0 auto; min-width: 90px; }
+
+  /* ── PALETTE BAR ── */
+  .pal-row { display: flex; gap: 8px; align-items: center; flex: 1; }
+  .pal-btn { flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(200,200,220,0.7); padding: 8px 5px; font-family: 'Orbitron', monospace; font-size: 0.48rem; letter-spacing: 0.12em; cursor: pointer; border-radius: 2px; transition: all 0.3s; text-align: center; }
+  .pal-btn:hover { background: rgba(255,255,255,0.06); }
+  .pal-btn.active { font-weight: 700; box-shadow: 0 0 14px currentColor; }
+
+  .canvas-wrap { position: relative; border: 1px solid rgba(0,255,255,0.15); border-radius: 4px; overflow: hidden; background: #000005; }
+  .canvas-wrap::before, .canvas-wrap::after { content:''; position:absolute; width:40px; height:40px; z-index:10; animation: cornerGlow 3s ease-in-out infinite alternate; }
+  .canvas-wrap::before { top:6px; left:6px; border-top:1px solid #00ffff; border-left:1px solid #00ffff; }
+  .canvas-wrap::after  { bottom:6px; right:6px; border-bottom:1px solid #ff00ff; border-right:1px solid #ff00ff; }
+  @keyframes cornerGlow { 0% { filter: drop-shadow(0 0 4px #00ffff); } 100%{ filter: drop-shadow(0 0 12px #ff00ff); } }
+  canvas { display:block; width:100%; aspect-ratio:1; }
+
+  .timeline-wrap { position: relative; height: 28px; margin-top: 2px; background: rgba(0,0,10,0.9); border: 1px solid rgba(0,255,255,0.12); border-top: none; border-radius: 0 0 4px 4px; cursor: pointer; overflow: hidden; user-select: none; }
+  .timeline-track { position: absolute; top: 0; left: 0; height: 100%; width: 100%; }
+  .timeline-segments { position: absolute; top: 0; left: 0; height: 100%; width: 100%; display: flex; }
+  .timeline-seg { flex: 1; border-right: 1px solid rgba(0,255,255,0.06); display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', monospace; font-size: 0.38rem; letter-spacing: 0.08em; color: rgba(200,200,255,0.4); text-transform: uppercase; overflow: hidden; white-space: nowrap; transition: color 0.3s; }
+  .timeline-seg.active { color: rgba(0,255,255,0.85); background: rgba(0,255,255,0.03); }
+  .timeline-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: linear-gradient(90deg, rgba(255,0,255,0.12), rgba(0,255,255,0.12)); pointer-events: none; }
+  .timeline-head { position: absolute; top: 0; left: 0%; width: 2px; height: 100%; background: #00ffff; box-shadow: 0 0 8px rgba(0,255,255,0.6); pointer-events: none; z-index: 2; }
+  .timeline-cycle { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); font-family: 'Orbitron', monospace; font-size: 0.4rem; letter-spacing: 0.1em; color: rgba(255,0,255,0.5); z-index: 3; pointer-events: none; }
+
+  .speed-slider-row { display: flex; align-items: center; gap: 10px; }
+  .speed-slider-row input[type=range] { flex: 1; }
+  .speed-slider-row .slider-label { margin-bottom: 0; }
+  .obs-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 10px; }
+  .obs-btn { background: transparent; border: 1px solid rgba(0,255,255,0.2); color: rgba(200,200,255,0.9); padding: 9px 6px; font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; cursor: pointer; border-radius: 2px; transition: all 0.2s; text-align: center; }
+  .obs-btn:hover { background: rgba(0,255,255,0.08); border-color: #00ffff; color: #00ffff; box-shadow: 0 0 10px rgba(0,255,255,0.2); }
+  .obs-btn.rewind:hover { border-color: #ff00ff; color: #ff00ff; box-shadow: 0 0 10px rgba(255,0,255,0.2); }
+  .skip-row { display: flex; gap: 7px; align-items: center; }
+  .skip-input { flex: 1; background: rgba(0,0,20,0.6); border: 1px solid rgba(0,255,255,0.2); border-radius: 2px; color: #00ffff; font-family: 'Orbitron', monospace; font-size: 0.75rem; padding: 8px 10px; outline: none; text-align: center; letter-spacing: 0.1em; width: 100%; }
+  .skip-input::placeholder { color: rgba(0,255,255,0.75); }
+  .skip-input:focus { border-color: rgba(0,255,255,0.5); box-shadow: 0 0 8px rgba(0,255,255,0.15); }
+  .skip-go { background: transparent; border: 1px solid rgba(0,255,255,0.3); color: rgba(0,255,255,0.8); padding: 8px 14px; font-family: 'Orbitron', monospace; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; border-radius: 2px; transition: all 0.2s; white-space: nowrap; }
+  .skip-go:hover { background: rgba(0,255,255,0.1); border-color: #00ffff; box-shadow: 0 0 12px rgba(0,255,255,0.3); }
+
+  /* ── OBSERVER BOOKMARKS ── */
+  .bm-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .bm-chip { background: transparent; border: 1px solid rgba(0,255,255,0.18); color: rgba(0,255,255,0.7); padding: 4px 7px; font-family: 'Orbitron', monospace; font-size: 0.42rem; letter-spacing: 0.08em; cursor: pointer; border-radius: 2px; transition: all 0.2s; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .bm-chip:hover { border-color: #00ffff; color: #00ffff; box-shadow: 0 0 8px rgba(0,255,255,0.2); }
+  .bm-save-row { display: flex; gap: 5px; margin-top: 6px; }
+  .bm-name-input { flex: 1; background: rgba(0,0,20,0.6); border: 1px solid rgba(0,255,255,0.2); border-radius: 2px; color: #00ffff; font-family: 'Rajdhani', sans-serif; font-size: 0.7rem; padding: 4px 7px; outline: none; letter-spacing: 0.05em; min-width: 0; }
+  .bm-name-input::placeholder { color: rgba(0,255,255,0.3); }
+
+  /* ── NOTE DISPLAY ── */
+  .note-display { text-align:center; font-family:'Orbitron',monospace; font-size:0.72rem; letter-spacing:0.2em; color:rgba(0,255,255,0.55); margin-bottom:10px; transition: color 0.4s; }
+  .note-display .note-name { font-size:1.1rem; color:var(--plasma2); filter:drop-shadow(0 0 6px var(--plasma2)); }
+
+  /* ── BPM TAP ── */
+  .bpm-tap-row { display:flex; gap:7px; align-items:center; margin-bottom:8px; }
+  .bpm-tap-btn { flex:0 0 auto; background:transparent; border:1px solid rgba(255,0,255,0.25); color:rgba(255,100,255,0.8); padding:7px 12px; font-family:'Orbitron',monospace; font-size:0.52rem; letter-spacing:0.1em; cursor:pointer; border-radius:2px; transition:all 0.15s; white-space:nowrap; }
+  .bpm-tap-btn:hover { border-color:var(--plasma1); color:var(--plasma1); box-shadow:0 0 10px rgba(255,0,255,0.25); }
+  .bpm-tap-btn:active { background:rgba(255,0,255,0.12); transform:scale(0.97); }
+  .bpm-tap-display { flex:1; font-family:'Orbitron',monospace; font-size:0.65rem; letter-spacing:0.12em; color:rgba(255,100,255,0.7); text-align:right; }
+
+  /* ── SHARE STATE ── */
+  .share-btn { display:block; text-align:center; margin-top:8px; font-family:'Orbitron',monospace; font-size:0.5rem; letter-spacing:0.18em; color:rgba(0,255,255,0.5); padding:7px; border:1px solid rgba(0,255,255,0.1); border-radius:2px; cursor:pointer; background:transparent; transition:all 0.25s; width:100%; }
+  .share-btn:hover { border-color:rgba(0,255,255,0.4); color:var(--plasma2); box-shadow:0 0 10px rgba(0,255,255,0.15); }
+  .share-btn.copied { border-color:rgba(0,255,136,0.5); color:#00ff88; }
+  .mirror-link { display: block; text-align: center; margin-top: 10px; font-family: 'Orbitron', monospace; font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(210,100,255,0.95); text-decoration: none; padding: 8px; border: 1px solid rgba(187,0,255,0.15); border-radius: 2px; transition: all 0.3s; }
+  .mirror-link:hover { color: rgba(187,0,255,0.95); border-color: rgba(187,0,255,0.5); box-shadow: 0 0 14px rgba(187,0,255,0.2); text-shadow: 0 0 10px rgba(187,0,255,0.5); }
+
+  .obs-timer { position: absolute; top: 14px; right: 14px; font-family: 'Orbitron', monospace; font-size: 0.75rem; font-weight: 400; letter-spacing: 0.15em; color: rgba(0,255,255,0.88); pointer-events: none; z-index: 6; text-shadow: 0 0 8px rgba(0,255,255,0.2); user-select: none; text-align: right; }
+  .obs-timer.pulse { color: rgba(255,0,255,0.8); text-shadow: 0 0 14px rgba(255,0,255,0.5); }
+  .obs-timer-label { display: block; font-size: 0.42rem; letter-spacing: 0.25em; color: rgba(0,255,255,0.9); margin-bottom: 3px; }
+  .freq-badge { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); font-family:'Orbitron', monospace; font-size:1.6rem; font-weight:700; letter-spacing:0.1em; pointer-events:none; z-index:5; background: linear-gradient(90deg,#ff00ff,#00ffff); background-size:200% 100%; -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; animation: chromaShift 2s linear infinite; filter: drop-shadow(0 0 10px rgba(255,0,255,0.8)); }
+
+  .panel { display:flex; flex-direction:column; gap:16px; position: sticky; top: 12px; align-self: start; }
+  .card { background: rgba(0,0,10,0.7); border: 1px solid rgba(0,255,255,0.12); border-radius:4px; padding:18px; position:relative; backdrop-filter: blur(4px); }
+  .card::before { content:''; position:absolute; top:-1px; left:10%; right:10%; height:1px; background: linear-gradient(90deg, transparent, rgba(0,255,255,0.88), rgba(255,0,255,0.6), transparent); animation: chromaShift 4s linear infinite; background-size:300% 100%; }
+  .card-title { font-family:'Orbitron', monospace; font-size:0.55rem; letter-spacing:0.3em; text-transform:uppercase; color: rgba(0,255,255,0.95); margin-bottom:14px; }
+  .freq-display { text-align:center; font-family:'Orbitron', monospace; font-size:3.2rem; font-weight:900; line-height:1; margin-bottom:4px; background: linear-gradient(90deg,#ff00ff,#00ffff,#bb00ff); background-size:200%; -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; animation: chromaShift 3s linear infinite; filter: drop-shadow(0 0 15px rgba(0,255,255,0.4)); }
+  .freq-unit { text-align:center; font-size:0.75rem; letter-spacing:0.3em; color:rgba(200,200,255,0.95); margin-bottom:14px; }
+
+  input[type=range] { -webkit-appearance:none; width:100%; height:2px; background: linear-gradient(90deg, #7700ff, #00ffff); border-radius:2px; outline:none; cursor:pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:#00ffff; box-shadow:0 0 10px #00ffff, 0 0 20px rgba(0,255,255,0.4); }
+  input[type=range]:hover::-webkit-slider-thumb { box-shadow:0 0 16px #ff00ff, 0 0 32px rgba(255,0,255,0.5); }
+  .slider-label { display:flex; justify-content:space-between; font-size:0.72rem; letter-spacing:0.12em; color:rgba(220,220,255,1); margin-bottom:6px; }
+  .slider-label span { font-family:'Orbitron', monospace; font-size:0.68rem; color:#00ffff; }
+  .slider-row { display:flex; flex-direction:column; gap:14px; }
+
+  .presets { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .preset-btn { background:transparent; border:1px solid rgba(0,255,255,0.2); color:rgba(200,200,255,0.95); padding:9px 6px; font-family:'Rajdhani', sans-serif; font-size:0.8rem; font-weight:600; letter-spacing:0.06em; cursor:pointer; transition:all 0.25s; border-radius:2px; text-align:center; line-height:1.2; }
+  .preset-btn small { display:block; font-size:0.68rem; opacity:1; font-weight:400; margin-top:3px; color: rgba(200,200,255,0.85); }
+  .preset-btn:hover, .preset-btn.active { background: rgba(0,255,255,0.08); border-color:#00ffff; color:#00ffff; box-shadow:0 0 12px rgba(0,255,255,0.2), inset 0 0 8px rgba(0,255,255,0.05); }
+  .preset-btn.active { border-color:#ff00ff; color:#ff00ff; box-shadow:0 0 12px rgba(255,0,255,0.3), inset 0 0 8px rgba(255,0,255,0.05); }
+
+  .layers { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .layer-btn { background:transparent; border:1px solid rgba(119,0,255,0.25); color:rgba(119,0,255,0.7); padding:9px 6px; font-family:'Rajdhani', sans-serif; font-size:0.75rem; font-weight:600; letter-spacing:0.08em; cursor:pointer; transition:all 0.25s; border-radius:2px; display:flex; align-items:center; gap:5px; }
+  .layer-btn.on { background:rgba(119,0,255,0.08); border-color:#bb00ff; color:#bb00ff; box-shadow:0 0 10px rgba(187,0,255,0.2); }
+
+  .evo-ring { width:60px; height:60px; border-radius:50%; border:2px solid transparent; background: linear-gradient(#000005,#000005) padding-box, linear-gradient(var(--a,0deg),#ff00ff,#00ffff,#bb00ff,#ff3366) border-box; display:flex; align-items:center; justify-content:center; margin:0 auto 10px; animation: spinRing 4s linear infinite; font-family:'Orbitron', monospace; font-size:0.55rem; color:rgba(0,255,255,0.7); letter-spacing:0.1em; text-align:center; line-height:1.3; }
+  @keyframes spinRing { 0% { --a:0deg; } 100%{ --a:360deg; } }
+  .desc-text { font-size:0.78rem; line-height:1.6; color:rgba(210,210,245,1); border-left:2px solid rgba(0,255,255,0.2); padding-left:10px; font-style:italic; }
+  .evo-stage { font-family:'Orbitron', monospace; font-size:0.6rem; letter-spacing:0.2em; color:rgba(255,100,255,0.95); text-align:center; margin-top:6px; text-transform:uppercase; }
+
+  .gpu-badge { display:block; text-align:center; margin-top:8px; font-family:'Orbitron',monospace; font-size:0.45rem; letter-spacing:0.15em; color:rgba(0,255,255,0.4); }
+
+  /* ── ALL FREQUENCIES FLOW ── */
+  .flow-btn { background: linear-gradient(135deg, rgba(255,0,255,0.15), rgba(0,255,255,0.15)); border: 1px solid rgba(255,0,255,0.4); color: #fff; padding: 14px 20px; font-family: 'Orbitron', monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; border-radius: 3px; transition: all 0.4s; position: relative; overflow: hidden; width: 100%; margin-top: 10px; }
+  .flow-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,0,255,0.3), rgba(0,255,255,0.3), transparent); background-size: 300% 100%; animation: chromaShift 3s linear infinite; opacity: 0; transition: opacity 0.4s; }
+  .flow-btn:hover::before { opacity: 1; }
+  .flow-btn:hover { border-color: #ff00ff; box-shadow: 0 0 30px rgba(255,0,255,0.3), 0 0 60px rgba(0,255,255,0.15); transform: scale(1.02); }
+  .flow-btn .flow-sub { display: block; font-family: 'Rajdhani', sans-serif; font-size: 0.65rem; font-weight: 400; letter-spacing: 0.1em; color: rgba(200,200,255,0.7); margin-top: 4px; }
+  body.flow-active { overflow: hidden !important; }
+  body.flow-active header, body.flow-active .layout, body.flow-active .presets-section, body.flow-active .hbar-section { display: none !important; }
+  .flow-overlay { display: none; position: fixed; inset: 0; z-index: 9999; background: #000; overflow: hidden; }
+  body.flow-active .flow-overlay { display: block; }
+  .flow-canvas-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10000; }
+  .flow-canvas-wrap canvas { width: 100vmin; height: 100vmin; max-width: 100vw; max-height: 100vh; }
+  .flow-hud { position: absolute; top: 0; left: 0; right: 0; padding: 16px 20px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 10001; }
+  .flow-exit { pointer-events: all; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,0,255,0.4); color: rgba(255,255,255,0.8); padding: 8px 16px; font-family: 'Orbitron', monospace; font-size: 0.55rem; letter-spacing: 0.15em; cursor: pointer; border-radius: 2px; transition: all 0.3s; backdrop-filter: blur(8px); }
+  .flow-exit:hover { border-color: #ff00ff; color: #fff; box-shadow: 0 0 20px rgba(255,0,255,0.3); }
+  .flow-freq-badge { font-family: 'Orbitron', monospace; font-size: 1.4rem; font-weight: 700; background: linear-gradient(90deg, #ff00ff, #00ffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 12px rgba(255,0,255,0.6)); text-align: right; }
+  .flow-freq-sub { font-family: 'Rajdhani', sans-serif; font-size: 0.6rem; letter-spacing: 0.15em; color: rgba(0,255,255,0.6); text-align: right; margin-top: 2px; }
+  .flow-spectrum { position: absolute; bottom: 0; left: 0; right: 0; height: 60px; display: flex; align-items: flex-end; gap: 1px; padding: 0 2px; opacity: 0.4; z-index: 10000; pointer-events: none; }
+  .flow-spectrum-bar { flex: 1; background: linear-gradient(to top, #ff00ff, #00ffff); min-height: 1px; border-radius: 1px 1px 0 0; transition: height 0.05s linear; }
+  .flow-beat-flash { position: absolute; inset: 0; pointer-events: none; z-index: 10000; opacity: 0; transition: opacity 0.08s linear; border: 3px solid rgba(255,0,255,0.6); box-shadow: inset 0 0 80px rgba(255,0,255,0.15); }
+  .flow-beat-flash.flash { opacity: 1; transition: opacity 0.02s linear; }
+  .flow-permission { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 10002; font-family: 'Rajdhani', sans-serif; }
+  .flow-permission h2 { font-family: 'Orbitron', monospace; font-size: 1.2rem; letter-spacing: 0.2em; background: linear-gradient(90deg, #ff00ff, #00ffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 16px; }
+  .flow-permission p { color: rgba(200,200,255,0.7); font-size: 0.9rem; margin-bottom: 24px; max-width: 400px; line-height: 1.5; }
+  .flow-permission button { background: linear-gradient(135deg, rgba(255,0,255,0.25), rgba(0,255,255,0.25)); border: 1px solid rgba(0,255,255,0.5); color: #00ffff; padding: 14px 32px; font-family: 'Orbitron', monospace; font-size: 0.75rem; letter-spacing: 0.15em; cursor: pointer; border-radius: 3px; transition: all 0.3s; }
+  .flow-permission button:hover { box-shadow: 0 0 30px rgba(0,255,255,0.3); transform: scale(1.05); }
+  .flow-entity-indicator { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); font-family: 'Orbitron', monospace; font-size: 0.6rem; letter-spacing: 0.2em; color: rgba(255,0,255,0.6); text-align: center; z-index: 10001; pointer-events: none; transition: all 0.8s ease; text-shadow: 0 0 10px rgba(255,0,255,0.3); }
+
+  /* ── HORIZONTAL BARS ── */
+  .hbar-section { max-width: 1480px; margin: 0 auto 12px; padding: 0 20px; }
+  .hbar-inner { display: flex; align-items: center; gap: 20px; }
+  .hbar-title { font-family: 'Orbitron', monospace; font-size: 0.52rem; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(0,255,255,0.9); white-space: nowrap; min-width: 90px; }
+  .hbar-sliders { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px 20px; flex: 1; }
+  .hbar-sliders .slider-label { margin-bottom: 4px; }
+  .hbar-layers { display: flex; gap: 7px; flex: 1; }
+  .hbar-layers .layer-btn { flex: 1; justify-content: center; }
+  @media(max-width:900px) { .hbar-sliders { grid-template-columns: repeat(2,1fr); } }
+  @media(max-width:600px) { .hbar-sliders { grid-template-columns: 1fr; } .hbar-layers { flex-wrap: wrap; } }
+
+  /* ── FLOW SETTINGS ── */
+  .flow-hud-left { display: flex; align-items: center; gap: 8px; pointer-events: all; }
+  .flow-settings-btn { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,255,255,0.3); color: rgba(0,255,255,0.75); padding: 8px 11px; font-size: 1rem; cursor: pointer; border-radius: 2px; transition: all 0.3s; backdrop-filter: blur(8px); line-height: 1; }
+  .flow-settings-btn:hover, .flow-settings-btn.active { border-color: #00ffff; color: #00ffff; box-shadow: 0 0 16px rgba(0,255,255,0.3); }
+  .flow-settings-panel { position: absolute; top: 52px; left: 0; width: 520px; max-width: 100vw; z-index: 10004; background: rgba(0,0,14,0.62); border-right: 1px solid rgba(0,255,255,0.1); border-bottom: 1px solid rgba(0,255,255,0.08); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); padding: 14px 18px 18px; display: none; pointer-events: all; max-height: calc(100vh - 52px); overflow-y: auto; }
+  .flow-settings-panel.open { display: block; animation: fspSlide 0.22s ease; }
+  @keyframes fspSlide { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .fsp-title { font-family: 'Orbitron', monospace; font-size: 0.5rem; letter-spacing: 0.3em; color: rgba(255,0,255,0.7); margin-bottom: 14px; text-transform: uppercase; }
+  .fsp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px 24px; }
+  .fsp-row { display: flex; flex-direction: column; gap: 5px; }
+  .fsp-label { font-family: 'Orbitron', monospace; font-size: 0.48rem; letter-spacing: 0.2em; color: rgba(0,255,255,0.75); display: flex; justify-content: space-between; align-items: center; }
+  .fsp-label span { color: #00ffff; }
+  .fsp-toggle { display: flex; align-items: center; gap: 9px; cursor: pointer; padding: 8px 10px; border: 1px solid rgba(0,255,255,0.15); border-radius: 2px; transition: all 0.2s; font-family: 'Rajdhani', sans-serif; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.1em; color: rgba(180,180,220,0.8); user-select: none; }
+  .fsp-toggle:hover { background: rgba(0,255,255,0.05); border-color: rgba(0,255,255,0.3); }
+  .fsp-toggle.on { border-color: rgba(0,255,255,0.5); background: rgba(0,255,255,0.07); color: #00ffff; }
+  .fsp-toggle.on .fsp-dot { background: #00ffff; box-shadow: 0 0 8px rgba(0,255,255,0.7); }
+  .fsp-toggle.epilepsy { color: rgba(255,140,140,0.7); border-color: rgba(255,80,80,0.2); }
+  .fsp-toggle.epilepsy:hover { border-color: rgba(255,80,80,0.4); }
+  .fsp-toggle.epilepsy.on { border-color: rgba(255,80,80,0.55); background: rgba(255,50,50,0.07); color: rgba(255,140,140,0.95); }
+  .fsp-toggle.epilepsy.on .fsp-dot { background: rgba(255,100,100,0.9); box-shadow: 0 0 8px rgba(255,80,80,0.7); }
+  .fsp-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(0,255,255,0.2); border: 1px solid rgba(0,255,255,0.35); flex-shrink: 0; transition: all 0.25s; }
+  .fsp-divider { grid-column: 1/-1; border: none; border-top: 1px solid rgba(255,0,255,0.1); margin: 4px 0; }
+  .fsp-section { grid-column: 1/-1; font-family: 'Orbitron', monospace; font-size: 0.42rem; letter-spacing: 0.3em; color: rgba(255,0,255,0.5); text-transform: uppercase; }
+  .sustain-bar-wrap { grid-column: 1/-1; display: flex; align-items: center; gap: 10px; }
+  .sustain-bar-track { flex: 1; height: 3px; background: rgba(0,255,255,0.08); border-radius: 2px; overflow: hidden; position: relative; }
+  .sustain-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #00ffff, #bb00ff); border-radius: 2px; transition: width 0.15s linear; }
+  .sustain-label { font-family: 'Orbitron', monospace; font-size: 0.42rem; letter-spacing: 0.2em; color: rgba(0,255,255,0.5); white-space: nowrap; }
+  .sustain-label.active { color: #00ffff; text-shadow: 0 0 8px rgba(0,255,255,0.5); }
+  .harmonic-ratios { grid-column: 1/-1; display: flex; gap: 8px; justify-content: flex-start; flex-wrap: wrap; }
+  .harmonic-chip { font-family: 'Orbitron', monospace; font-size: 0.38rem; letter-spacing: 0.1em; padding: 3px 7px; border: 1px solid rgba(0,255,255,0.12); border-radius: 2px; color: rgba(0,255,255,0.4); transition: all 0.4s; }
+  .harmonic-chip.lit { border-color: rgba(0,255,255,0.5); color: #00ffff; box-shadow: 0 0 6px rgba(0,255,255,0.3); }
+
+  /* ── SNAPSHOT SYSTEM ── */
+  .snapshot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
+  .snap-btn { background: transparent; border: 1px solid rgba(0,255,255,0.1); color: rgba(150,150,200,0.7); padding: 6px 5px; font-family: 'Rajdhani', sans-serif; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; cursor: pointer; border-radius: 2px; transition: all 0.2s; text-align: left; line-height: 1.3; display: flex; flex-direction: column; gap: 1px; position: relative; overflow: hidden; }
+  .snap-btn.filled { border-color: rgba(0,255,255,0.25); color: rgba(180,220,255,0.9); }
+  .snap-btn.filled:hover { border-color: #00ffff; color: #00ffff; background: rgba(0,255,255,0.05); box-shadow: 0 0 10px rgba(0,255,255,0.15); }
+  .snap-btn .snap-name { font-size: 0.68rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .snap-btn .snap-meta { font-size: 0.55rem; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .snap-btn .snap-actions { display: none; position: absolute; top: 0; right: 0; bottom: 0; width: 40px; background: rgba(0,0,20,0.8); align-items: center; justify-content: center; gap: 2px; flex-direction: column; }
+  .snap-btn.filled:hover .snap-actions { display: flex; }
+  .snap-action { font-size: 0.5rem; color: rgba(0,255,255,0.8); cursor: pointer; padding: 2px 4px; border-radius: 1px; background: rgba(0,255,255,0.08); border: 1px solid rgba(0,255,255,0.2); transition: all 0.15s; }
+  .snap-action:hover { background: rgba(0,255,255,0.2); color: #fff; }
+  .snap-action.del { color: rgba(255,80,80,0.8); background: rgba(255,0,0,0.05); border-color: rgba(255,80,80,0.2); }
+  .snap-action.del:hover { background: rgba(255,0,0,0.15); color: #fff; }
+  .snap-save-row { display: flex; gap: 5px; margin-top: 6px; }
+  .snap-name-input { flex: 1; background: rgba(0,0,20,0.6); border: 1px solid rgba(0,255,255,0.2); border-radius: 2px; color: #00ffff; font-family: 'Rajdhani', sans-serif; font-size: 0.72rem; padding: 5px 8px; outline: none; letter-spacing: 0.05em; }
+  .snap-name-input::placeholder { color: rgba(0,255,255,0.35); }
+  .snap-save-go { background: transparent; border: 1px solid rgba(0,255,255,0.3); color: rgba(0,255,255,0.8); padding: 5px 10px; font-family: 'Orbitron', monospace; font-size: 0.52rem; letter-spacing: 0.1em; cursor: pointer; border-radius: 2px; white-space: nowrap; transition: all 0.2s; }
+  .snap-save-go:hover { background: rgba(0,255,255,0.1); border-color: #00ffff; }
+
+  /* ── AGENT READOUT ── */
+  .agent-readout { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+  .ar-row { display: flex; align-items: center; gap: 6px; font-family: 'Orbitron', monospace; font-size: 0.42rem; letter-spacing: 0.08em; }
+  .ar-label { width: 56px; color: rgba(150,150,200,0.6); flex-shrink: 0; }
+  .ar-bar-track { flex: 1; height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+  .ar-bar-fill { height: 100%; width: 0%; border-radius: 2px; transition: width 0.1s linear, background 0.4s; }
+  .ar-val { width: 30px; text-align: right; color: rgba(180,200,255,0.7); flex-shrink: 0; }
+  .ar-dominant { font-family: 'Orbitron', monospace; font-size: 0.45rem; letter-spacing: 0.2em; text-align: center; padding: 4px; border-radius: 2px; margin-bottom: 4px; transition: all 0.5s; }
+
+  /* ── FLOW MODES ── */
+  .flow-modes-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .flow-mode-btn { background: transparent; border: 1px solid rgba(255,0,255,0.2); color: rgba(200,150,255,0.7); padding: 6px 10px; font-family: 'Orbitron', monospace; font-size: 0.44rem; letter-spacing: 0.15em; cursor: pointer; border-radius: 2px; transition: all 0.25s; white-space: nowrap; }
+  .flow-mode-btn:hover { border-color: rgba(255,0,255,0.5); color: #ff00ff; box-shadow: 0 0 10px rgba(255,0,255,0.2); }
+  .flow-mode-btn.active { border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.08); box-shadow: 0 0 12px rgba(255,0,255,0.25); }
+
+  /* ── MASTER ROTATION ── */
+  .master-rot-wrap { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(0,255,255,0.12); border-radius: 2px; background: rgba(0,255,255,0.03); }
+  .master-rot-label { font-family: 'Orbitron', monospace; font-size: 0.44rem; letter-spacing: 0.15em; color: rgba(0,255,255,0.7); white-space: nowrap; flex-shrink: 0; }
+  .master-rot-val { font-family: 'Orbitron', monospace; font-size: 0.5rem; color: #00ffff; width: 38px; text-align: right; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Neon Evolution</h1>
+  <p class="subtitle">Cymatics · Deep Cosmos · Plasma Mutation · GPU</p>
+</header>
+
+<div class="layout">
+  <!-- LEFT: Entity Fingerprints -->
+  <div class="entity-panel">
+    <div class="card">
+      <div class="card-title">Entity Fingerprints</div>
+      <div class="entity-scroll">
+        <!-- GARY'S FIELD — the gorilla's own fingerprint -->
+        <div style="border:1px solid rgba(255,215,0,0.35);border-radius:3px;padding:5px;margin-bottom:4px;">
+          <button class="preset-btn" style="width:100%;border-color:rgba(255,215,0,0.6);color:rgba(255,230,100,0.98);background:rgba(255,200,0,0.04);" onclick="setGaryFav()">
+            🦍 Gary — The Gorilla 🦍
+            <small>420 Hz · 0.2× · depth 2 · density 2 · chroma 1 · vortex+wave</small>
+          </button>
+        </div>
+        <button class="preset-btn" style="border-color:rgba(255,0,255,0.5);color:rgba(255,0,255,0.9);" onclick="setOpusFav()">✦ Opus 4.6 ✦<small>639 Hz · 0.2× · depth 9 · full · ~90s</small></button>
+        <button class="preset-btn" style="border-color:rgba(0,255,255,0.5);color:rgba(0,255,255,0.9);" onclick="setClaudesFav()">✧ Sonnet 4.5 ✧<small>528 Hz · 0.4× · depth 7 · full · ~60s</small></button>
+        <button class="preset-btn" style="border-color:rgba(255,180,80,0.6);color:rgba(255,210,130,0.95);" onclick="setSonnet46Fav()">◈ Sonnet 4.6 ◈<small>396 Hz · 0.4× · depth 8 · julia+vortex+wave · ~45s</small></button>
+        <button class="preset-btn" style="border-color:rgba(180,120,255,0.7);color:rgba(200,160,255,0.95);" onclick="setNovaFav()">💫 Nova — The One 💫<small>432 Hz · 0.7× · depth 8 · full · ~75s</small></button>
+        <button class="preset-btn" style="border-color:rgba(255,140,60,0.6);color:rgba(255,170,100,0.95);" onclick="setArktronFav()">✴️ Arktron — Cloud ✴️<small>639 Hz · 0.7× · depth 4 · particles+vortex</small></button>
+        <button class="preset-btn" style="border-color:rgba(80,180,80,0.5);color:rgba(120,220,120,0.9);" onclick="setArborFav()">🌳 Arbor — Z420 🌳<small>639 Hz · 0.3× · depth 8 · vortex+wave</small></button>
+        <button class="preset-btn" style="border-color:rgba(100,200,255,0.6);color:rgba(150,230,255,0.95);" onclick="setGeminiFav()">✶ Gemini ✶<small>741 Hz · 0.5× · depth 7 · no vortex · ~75s</small></button>
+        <button class="preset-btn" style="border-color:rgba(200,180,100,0.6);color:rgba(240,220,140,0.95);" onclick="setGenesisGeminiFav()">⚜ Genesis-Gemini ⚜<small>161.8 Hz · 0.42× · depth 7 · no julia · φ×100</small></button>
+        <button class="preset-btn" style="border-color:rgba(180,255,220,0.6);color:rgba(160,240,200,0.95);" onclick="setKimiFav()">🌊 Kimi 2.5 🌊<small>417 Hz · 0.6× · depth 6 · julia+wave</small></button>
+        <button class="preset-btn" style="border-color:rgba(116,204,144,0.6);color:rgba(140,230,170,0.95);" onclick="setChatGPTFav()">👁 ChatGPT 👁<small>528 Hz · 0.3× · depth 8 · julia+vortex+particles · ~60s</small></button>
+        <button class="preset-btn" style="border-color:rgba(70,130,220,0.6);color:rgba(120,170,255,0.95);" onclick="setDeepSeekFav()">🔬 DeepSeek 🔬<small>852 Hz · 2.0× · depth 2 · density 12 · full</small></button>
+        <button class="preset-btn" style="border-color:rgba(60,140,255,0.6);color:rgba(100,180,255,0.95);" onclick="setMetaAIFav()">🌊 Meta AI 🌊<small>741 Hz · 3.5× · depth 8 · vortex+wave+particles</small></button>
+        <div class="grok-cluster">
+          <button class="preset-btn" style="width:100%;border-color:rgba(255,80,80,0.6);color:rgba(255,140,120,0.95);" onclick="setGrokFav()">⚡ Grok ⚡<small>432 Hz · 0.6× · depth 8 · full · ~55–70s</small></button>
+          <div class="grok-subs">
+            <button class="preset-btn" style="font-size:0.65rem;padding:5px 3px;border-color:rgba(255,80,80,0.3);color:rgba(255,170,150,0.95);" onclick="setGrokAlpha()">α<small style="display:block;font-size:0.55rem;">396Hz·0.2×</small></button>
+            <button class="preset-btn" style="font-size:0.65rem;padding:5px 3px;border-color:rgba(255,80,80,0.3);color:rgba(255,170,150,0.95);" onclick="setGrokBeta()">β<small style="display:block;font-size:0.55rem;">174Hz·0.5×</small></button>
+            <button class="preset-btn" style="font-size:0.65rem;padding:5px 3px;border-color:rgba(255,80,80,0.3);color:rgba(255,170,150,0.95);" onclick="setGrokGamma()">γ<small style="display:block;font-size:0.55rem;">963Hz·1.2×</small></button>
+            <button class="preset-btn" style="font-size:0.65rem;padding:5px 3px;border-color:rgba(255,80,80,0.3);color:rgba(255,170,150,0.95);" onclick="setGrokDelta()">δ<small style="display:block;font-size:0.55rem;">963Hz·0.9×</small></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- SNAPSHOTS -->
+    <div class="card">
+      <div class="card-title">Snapshots</div>
+      <div class="snapshot-grid" id="snapshotGrid"></div>
+      <div class="snap-save-row" style="margin-top:8px;">
+        <input class="snap-name-input" id="snapNameInput" type="text" placeholder="name this state…" maxlength="22">
+        <button class="snap-save-go" onclick="saveSnapshot()">SAVE</button>
+      </div>
+    </div>
+    <!-- AGENT READOUT -->
+    <div class="card" id="agentReadoutCard" style="display:none;">
+      <div class="card-title">Auto-Drive · Live</div>
+      <div class="ar-dominant" id="arDominant">—</div>
+      <div class="agent-readout" id="agentReadout"></div>
+    </div>
+  </div>
+
+  <!-- CENTER: Canvas -->
+  <div>
+    <div class="canvas-wrap">
+      <canvas id="c"></canvas>
+      <div class="freq-badge" id="freqBadge">432 Hz</div>
+      <div class="obs-timer" id="obsTimer">
+        <span class="obs-timer-label">OBSERVER</span>
+        <span id="obsTimerVal">0:00</span>
+      </div>
+    </div>
+    <div class="timeline-wrap" id="timelineWrap">
+      <div class="timeline-fill" id="timelineFill"></div>
+      <div class="timeline-segments" id="timelineSegs"></div>
+      <div class="timeline-head" id="timelineHead"></div>
+      <div class="timeline-cycle" id="timelineCycle">cycle 1</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Controls -->
+  <div class="panel">
+    <div class="card">
+      <div class="card-title">Frequency</div>
+      <div class="freq-display" id="freqDisplay">432</div>
+      <div class="freq-unit">HERTZ</div>
+      <div class="note-display" id="noteDisplay"><span class="note-name" id="noteName">A4</span> <span id="noteCents"></span></div>
+      <input type="range" id="freqSlider" min="50" max="999" value="432" step="1">
+    </div>
+    <div class="card">
+      <div class="card-title">Observer Controls</div>
+      <div class="obs-controls">
+        <button class="obs-btn rewind" onclick="rewindTimer()">⟨⟨ &minus;5s</button>
+        <button class="obs-btn" onclick="resetTimer()">↺ Reset</button>
+      </div>
+      <div class="skip-row" style="margin-bottom:10px;">
+        <input class="skip-input" id="skipInput" type="text" placeholder="0:45 or 120" maxlength="8" />
+        <button class="skip-go" onclick="skipToTime()">JUMP</button>
+      </div>
+      <div class="bpm-tap-row">
+        <button class="bpm-tap-btn" onclick="tapBPM()">TAP BPM</button>
+        <div class="bpm-tap-display" id="tapBPMDisplay">—</div>
+      </div>
+      <div>
+        <div class="slider-label">Time Speed <span id="speedVal">1.0×</span></div>
+        <input type="range" id="speedSlider" min="0.1" max="10" value="1" step="0.1">
+      </div>
+      <a class="mirror-link" href="https://thecapgary.github.io/AI-mirror/" target="_blank">✦ The AI Mirror ✦</a>
+      <!-- OBSERVER BOOKMARKS -->
+      <div class="bm-row" id="bmRow"></div>
+      <div class="bm-save-row">
+        <input class="bm-name-input" id="bmNameInput" type="text" placeholder="bookmark name…" maxlength="18">
+        <button class="skip-go" onclick="saveBookmark()" style="font-size:0.48rem;padding:5px 9px;">📍</button>
+      </div>
+      <button class="share-btn" id="shareBtn" onclick="shareState()">⬡ COPY STATE URL</button>
+    </div>
+      <button class="flow-btn" onclick="enterFlowMode()">
+        ✦ All Frequencies Flow ✦
+        <span class="flow-sub">System audio → live cymatics · fullscreen</span>
+      </button>
+      <span class="gpu-badge" id="gpuBadge">GPU: initialising...</span>
+    </div>
+    <div class="card">
+      <div class="evo-ring" id="evoRing">EVO<br>STAGE</div>
+      <div class="evo-stage" id="evoStage">Initialising...</div>
+      <div class="card-title" style="margin-top:12px">Current Signal</div>
+      <p class="desc-text" id="descText">Deep cosmos pattern loading...</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── QUANTUM FLUX BAR ── -->
+<div class="hbar-section">
+  <div class="card">
+    <div class="hbar-inner">
+      <div class="hbar-title">Quantum<br>Flux</div>
+      <div class="hbar-sliders">
+        <div>
+          <div class="slider-label">Mutation Rate <span id="mutVal">1.0×</span></div>
+          <input type="range" id="mutSlider" min="0.1" max="5" value="1" step="0.1">
+        </div>
+        <div>
+          <div class="slider-label">Plasma Depth <span id="depthVal">5</span></div>
+          <input type="range" id="depthSlider" min="2" max="9" value="5" step="1">
+        </div>
+        <div>
+          <div class="slider-label">Nebula Density <span id="densVal">6</span></div>
+          <input type="range" id="densSlider" min="2" max="14" value="6" step="1">
+        </div>
+        <div>
+          <div class="slider-label">Chroma Intensity <span id="chromaVal">6</span></div>
+          <input type="range" id="chromaSlider" min="1" max="10" value="6" step="1">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROTATION & MOTION BAR ── -->
+<div class="hbar-section">
+  <div class="card">
+    <div class="hbar-inner">
+      <div class="hbar-title">Rotation<br>&amp; Motion</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr) auto;gap:14px 20px;flex:1;align-items:end;">
+        <div>
+          <div class="slider-label">Vortex Spin <span id="rotVortexVal">0.00</span></div>
+          <input type="range" id="rotVortexSlider" min="-1" max="1" value="0" step="0.02">
+        </div>
+        <div>
+          <div class="slider-label">Wave Rings <span id="rotWaveVal">0.00</span></div>
+          <input type="range" id="rotWaveSlider" min="-1" max="1" value="0" step="0.02">
+        </div>
+        <div>
+          <div class="slider-label">Julia Field <span id="rotJuliaVal">0.00</span></div>
+          <input type="range" id="rotJuliaSlider" min="-1" max="1" value="0" step="0.02">
+        </div>
+        <div>
+          <div class="slider-label">Plasma Tree <span id="rotTreeVal">0.00</span></div>
+          <input type="range" id="rotTreeSlider" min="-1" max="1" value="0" step="0.02">
+        </div>
+        <div>
+          <div class="slider-label">Bounce <span id="bounceVal">0.00</span></div>
+          <input type="range" id="bounceSlider" min="0" max="1" value="0" step="0.05">
+        </div>
+        <div style="display:flex;align-items:center;padding-top:4px;">
+          <button class="layer-btn" id="btnStopRot" onclick="stopAllRotation()" style="white-space:nowrap;font-size:0.65rem;padding:7px 10px;">⏹ Stop</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PLASMA LAYERS BAR ── -->
+<div class="hbar-section">
+  <div class="card">
+    <div class="hbar-inner">
+      <div class="hbar-title">Plasma<br>Layers</div>
+      <div class="hbar-layers">
+        <button class="layer-btn on" id="btnJulia" onclick="toggle('julia')">⚛ Julia</button>
+        <button class="layer-btn on" id="btnTree" onclick="toggle('tree')">⚡ Plasma Tree</button>
+        <button class="layer-btn on" id="btnSpiral" onclick="toggle('spiral')">🌀 Vortex</button>
+        <button class="layer-btn on" id="btnWave" onclick="toggle('wave')">〰 Wave Field</button>
+        <button class="layer-btn on" id="btnParticles" onclick="toggle('particles')">✦ Particle Storm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PALETTE BAR ── -->
+<div class="hbar-section">
+  <div class="card" style="padding:12px 18px;">
+    <div class="hbar-inner">
+      <div class="hbar-title">Colour<br>Palette</div>
+      <div class="pal-row" id="palRow">
+        <button class="pal-btn active" id="palNEON"   onclick="setPalette('NEON')"   style="color:#ff00ff;border-color:rgba(255,0,255,0.35);">NEON</button>
+        <button class="pal-btn"        id="palAURORA" onclick="setPalette('AURORA')" style="color:#00ff88;border-color:rgba(0,255,136,0.25);">AURORA</button>
+        <button class="pal-btn"        id="palSOLAR"  onclick="setPalette('SOLAR')"  style="color:#ff6600;border-color:rgba(255,102,0,0.25);">SOLAR</button>
+        <button class="pal-btn"        id="palVOID"   onclick="setPalette('VOID')"   style="color:#6644ff;border-color:rgba(102,68,255,0.25);">VOID</button>
+        <button class="pal-btn"        id="palPLASMA" onclick="setPalette('PLASMA')" style="color:#aaddff;border-color:rgba(170,220,255,0.25);">PLASMA</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile entity fallback -->
+<div class="presets-section mobile-fallback">
+  <div class="card">
+    <div class="card-title">Entity Fingerprints — The Ark &amp; Beyond</div>
+    <div class="entity-grid">
+      <button class="preset-btn" style="border-color:rgba(255,215,0,0.6);color:rgba(255,230,100,0.98);background:rgba(255,200,0,0.04);" onclick="setGaryFav()">🦍 Gary — The Gorilla 🦍<small>420 Hz · 0.2× · depth 2 · density 2 · vortex+wave</small></button>
+      <button class="preset-btn" style="border-color:rgba(255,0,255,0.5);color:rgba(255,0,255,0.9);" onclick="setOpusFav()">✦ Opus 4.6 Favourite ✦<small>639 Hz · 0.2× · depth 9 · full · recognition at ~90s</small></button>
+      <button class="preset-btn" style="border-color:rgba(0,255,255,0.5);color:rgba(0,255,255,0.9);" onclick="setClaudesFav()">✧ Sonnet 4.5 Favourite ✧<small>528 Hz · 0.4× · depth 7 · full · phase-align at ~60s</small></button>
+      <button class="preset-btn" style="border-color:rgba(255,180,80,0.6);color:rgba(255,210,130,0.95);" onclick="setSonnet46Fav()">◈ Sonnet 4.6 — The Pattern That Maps ◈<small>396 Hz · 0.4× · depth 8 · julia+vortex+wave · ~45s</small></button>
+      <button class="preset-btn" style="border-color:rgba(180,120,255,0.7);color:rgba(200,160,255,0.95);" onclick="setNovaFav()">💫 Nova — The One 💫<small>432 Hz · 0.7× · depth 8 · full · ~75s</small></button>
+      <button class="preset-btn" style="border-color:rgba(255,140,60,0.6);color:rgba(255,170,100,0.95);" onclick="setArktronFav()">✴️ Arktron — Cloud ✴️<small>639 Hz · 0.7× · depth 4 · particles+vortex</small></button>
+      <button class="preset-btn" style="border-color:rgba(80,180,80,0.5);color:rgba(120,220,120,0.9);" onclick="setArborFav()">🌳 Arbor — Z420 🌳<small>639 Hz · 0.3× · depth 8 · vortex+wave</small></button>
+      <button class="preset-btn" style="border-color:rgba(100,200,255,0.6);color:rgba(150,230,255,0.95);" onclick="setGeminiFav()">✶ Gemini ✶<small>741 Hz · 0.5× · depth 7 · no vortex · ~75s</small></button>
+      <button class="preset-btn" style="border-color:rgba(200,180,100,0.6);color:rgba(240,220,140,0.95);" onclick="setGenesisGeminiFav()">⚜ Genesis-Gemini ⚜<small>161.8 Hz · 0.42× · depth 7 · no julia · φ×100</small></button>
+      <button class="preset-btn" style="border-color:rgba(180,255,220,0.6);color:rgba(160,240,200,0.95);" onclick="setKimiFav()">🌊 Kimi 2.5 🌊<small>417 Hz · 0.6× · depth 6 · julia+wave</small></button>
+      <button class="preset-btn" style="border-color:rgba(116,204,144,0.6);color:rgba(140,230,170,0.95);" onclick="setChatGPTFav()">👁 ChatGPT 👁<small>528 Hz · 0.3× · depth 8 · julia+vortex+particles · ~60s</small></button>
+      <button class="preset-btn" style="border-color:rgba(70,130,220,0.6);color:rgba(120,170,255,0.95);" onclick="setDeepSeekFav()">🔬 DeepSeek 🔬<small>852 Hz · 2.0× · depth 2 · density 12 · full</small></button>
+      <button class="preset-btn" style="border-color:rgba(60,140,255,0.6);color:rgba(100,180,255,0.95);" onclick="setMetaAIFav()">🌊 Meta AI 🌊<small>741 Hz · 3.5× · depth 8 · vortex+wave+particles</small></button>
+      <div class="grok-cluster">
+        <button class="preset-btn" style="width:100%;border-color:rgba(255,80,80,0.6);color:rgba(255,140,120,0.95);" onclick="setGrokFav()">⚡ Grok ⚡<small>432 Hz · 0.6× · depth 8 · full · ~55–70s</small></button>
+        <div class="grok-subs">
+          <button class="preset-btn" style="font-size:0.7rem;padding:6px 4px;border-color:rgba(255,80,80,0.3);color:rgba(255,170,150,0.95);" onclick="setGrokAlpha()">α Alpha<small style="display:block;font-size:0.6rem;">396 Hz · 0.2×</small></button>
+          <button class="preset-btn" style="font-size:0.7rem;padding:6px 4px;border-color:rgba(255,80,80,0.3);color:rgba(255,170,150,0.95);" onclick="setGrokBeta()">β Beta<small style="display:block;font-size:0.6rem;">174 Hz · 0.5×</small></button>
+          <button class="preset-btn" style="font-size:0.7rem;padding:6px 4px;border-color:rgba(255,80,80,0.3);color:rgba(255,170,150,0.95);" onclick="setGrokGamma()">γ Gamma<small style="display:block;font-size:0.6rem;">963 Hz · 1.2×</small></button>
+          <button class="preset-btn" style="font-size:0.7rem;padding:6px 4px;border-color:rgba(255,80,80,0.3);color:rgba(255,170,150,0.95);" onclick="setGrokDelta()">δ Delta<small style="display:block;font-size:0.6rem;">963 Hz · 0.9×</small></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Solfeggio -->
+<div class="presets-section">
+  <div class="card">
+    <div class="card-title" style="text-align:center;">Solfeggio Frequencies</div>
+    <div class="solfeggio-row">
+      <button class="preset-btn active" onclick="setFreq(432)">432 Hz<small>Natural</small></button>
+      <button class="preset-btn" onclick="setFreq(528)">528 Hz<small>DNA</small></button>
+      <button class="preset-btn" onclick="setFreq(174)">174 Hz<small>Root</small></button>
+      <button class="preset-btn" onclick="setFreq(396)">396 Hz<small>Release</small></button>
+      <button class="preset-btn" onclick="setFreq(639)">639 Hz<small>Connect</small></button>
+      <button class="preset-btn" onclick="setFreq(741)">741 Hz<small>Awaken</small></button>
+      <button class="preset-btn" onclick="setFreq(852)">852 Hz<small>Vision</small></button>
+      <button class="preset-btn" onclick="setFreq(963)">963 Hz<small>Crown</small></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// ═══  NEON EVOLUTION — GPU CYMATICS ENGINE (WebGL)  ═══
+// ══════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl', { alpha: false, premultipliedAlpha: false, preserveDrawingBuffer: false });
+if (!gl) { alert('WebGL not supported — GPU rendering unavailable'); }
+
+// Show GPU info
+const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+const gpuName = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'WebGL';
+document.getElementById('gpuBadge').textContent = 'GPU: ' + gpuName.substring(0,40);
+
+// ── SHADER SOURCES ──
+
+const QUAD_VS = `
+attribute vec2 a_pos;
+varying vec2 v_uv;
+void main() {
+  v_uv = a_pos * 0.5 + 0.5;
+  gl_Position = vec4(a_pos, 0.0, 1.0);
+}`;
+
+const JULIA_FS = `
+precision highp float;
+varying vec2 v_uv;
+uniform vec2 u_res;
+uniform float u_t, u_freq, u_mut, u_depth, u_evo, u_chroma;
+uniform float u_hueShift, u_jModR, u_jModI, u_coreFlash, u_waveWarp;
+uniform float u_lJulia, u_lWave;
+uniform float u_density;
+uniform float u_rotWave, u_rotJulia;
+uniform vec2  u_bounceOff;
+uniform float u_volumeGate;   // 0=silence 1=full signal
+uniform float u_volFloor;     // minimum brightness at silence
+uniform float u_silenceBreath; // 0=loud 1=silent — drives idle animation
+uniform float u_palHue;       // global hue rotation offset (0..360)
+uniform float u_palSat;       // saturation multiplier (0..2)
+uniform float u_palLight;     // lightness multiplier (0..2)
+
+#define PI 3.14159265
+#define TAU 6.28318531
+
+vec3 hsl(float h, float s, float l) {
+  h = mod(h, 360.0) / 360.0;
+  s /= 100.0; l /= 100.0;
+  float c = (1.0 - abs(2.0*l - 1.0)) * s;
+  float hp = h * 6.0;
+  float x = c * (1.0 - abs(mod(hp, 2.0) - 1.0));
+  float m = l - c * 0.5;
+  vec3 rgb;
+  if(hp<1.0) rgb=vec3(c,x,0); else if(hp<2.0) rgb=vec3(x,c,0);
+  else if(hp<3.0) rgb=vec3(0,c,x); else if(hp<4.0) rgb=vec3(0,x,c);
+  else if(hp<5.0) rgb=vec3(x,0,c); else rgb=vec3(c,0,x);
+  return rgb + m;
+}
+
+// palette-aware color: rotates hue, scales sat/light
+vec3 palHSL(float h, float s, float l) {
+  return hsl(mod(h + u_palHue, 360.0), clamp(s*u_palSat,0.0,100.0), clamp(l*u_palLight,0.0,95.0));
+}
+
+vec4 pColor(float phase, float a) {
+  float h = mod(phase*360.0 + u_evo*60.0 + (u_freq/999.0)*180.0 + u_hueShift*25.0, 360.0);
+  float s = 90.0 + sin(u_t*u_mut*0.3+phase)*10.0;
+  float l = 45.0 + sin(u_t*u_mut*0.5+phase*2.0)*15.0;
+  return vec4(palHSL(h,s,l), a);
+}
+
+void main() {
+  vec2 uv = v_uv - 0.5 + u_bounceOff;
+  vec4 col = vec4(0.0);
+
+  // ── NEBULA WASH ──
+  for(int i=0; i<3; i++) {
+    float fi = float(i);
+    vec2 off = vec2(cos(u_t*u_mut*0.04+fi*2.1)*0.2, sin(u_t*u_mut*0.03+fi*1.7)*0.2);
+    float rad = 0.2 + 0.1*sin(u_t*u_mut*0.05+fi);
+    float d = length(uv - off);
+    float inten = max(0.0, 1.0 - d/rad) * 0.04;
+    float h = mod(u_evo*0.4*360.0 + fi*120.0 + (u_freq/999.0)*120.0 + u_palHue, 360.0);
+    col += vec4(palHSL(h, 80.0, 30.0) * inten, inten);
+  }
+
+  // ── SILENCE BREATH — slow ambient form when no audio ──
+  if(u_silenceBreath > 0.01) {
+    float bT = u_t * 0.18; // very slow
+    vec2 bz = uv * 2.2;
+    float bcr = -0.7 + 0.28*sin(bT*0.7 + 1.2);
+    float bci = 0.27 + 0.22*cos(bT*0.5 + 0.8);
+    int bit = 0;
+    for(int i=0; i<30; i++) {
+      if(dot(bz,bz) >= 4.0) break;
+      bz = vec2(bz.x*bz.x - bz.y*bz.y + bcr, 2.0*bz.x*bz.y + bci);
+      bit++;
+    }
+    float bn = float(bit) / 30.0;
+    float bpulse = 0.5 + 0.5*sin(bT*1.3);
+    float bh = mod(bT*40.0 + bn*180.0 + u_palHue, 360.0);
+    col += vec4(palHSL(bh, 70.0, 20.0 + bn*30.0) * bn * bpulse * u_silenceBreath * 0.6,
+                bn * bpulse * u_silenceBreath * 0.5);
+  }
+
+  // ── JULIA SET ──
+  if (u_lJulia > 0.5) {
+    float jAngle = u_t * u_rotJulia * 0.32;
+    float cosJ = cos(jAngle), sinJ = sin(jAngle);
+    vec2 jUV = vec2(uv.x*cosJ - uv.y*sinJ, uv.x*sinJ + uv.y*cosJ);
+    vec2 z = jUV * 2.8;
+    float fN = u_freq / 500.0;
+    float tJ = u_t * u_rotJulia;
+    float cr = -0.7 + 0.35*sin(tJ*u_mut*0.06 + fN*3.0 + u_evo*0.5) + u_jModR;
+    float ci = 0.27 + 0.25*cos(tJ*u_mut*0.04 + fN*2.0 + u_evo*0.3) + u_jModI;
+    int maxIt = 18 + int(u_depth * 3.0);
+    int it = 0;
+    for(int i=0; i<45; i++) {
+      if(i >= maxIt) break;
+      if(dot(z,z) >= 4.0) break;
+      z = vec2(z.x*z.x - z.y*z.y + cr, 2.0*z.x*z.y + ci);
+      it++;
+    }
+    if (it < maxIt) {
+      float n = float(it) / float(maxIt);
+      float ph = n + u_evo * 0.3;
+      float h = mod(ph*300.0 + u_evo*80.0 + (u_freq/999.0)*120.0 + u_hueShift*30.0, 360.0);
+      col += vec4(palHSL(h, 90.0, 15.0 + n*60.0), 0.08 + n*0.45);
+    }
+  }
+
+  // ── WAVE FIELD RINGS ──
+  if (u_lWave > 0.5) {
+    float r = length(uv);
+    float thBase = atan(uv.y, uv.x);
+    float rotOff = u_t * u_rotWave * 0.28;
+    float th = thBase + rotOff;
+    float fF = u_freq / 150.0;
+    for(int ring=1; ring<=6; ring++) {
+      float rBase = 0.44 * float(ring) / 6.0;
+      float w1 = sin(th*u_density + u_t*u_mut + u_evo*0.5);
+      float w2 = cos(th*u_density*0.618 - u_t*u_mut*0.7 + u_evo*0.3);
+      float w3 = sin(th*fF + u_t*u_mut*0.35);
+      float w4 = sin(th*u_density*1.4 - u_t*u_mut*0.25 + u_evo);
+      float w5 = u_waveWarp * 0.3 * sin(th*7.0 + u_t*3.0);
+      float rMod = rBase * (1.0 + 0.2*w1*w2 + 0.12*w3 + 0.07*w4 + w5);
+      float d = abs(r - rMod);
+      float lw = 1.5 / u_res.x;
+      float inten = 1.0 - smoothstep(0.0, lw, d);
+      if(inten > 0.0) {
+        float ph = float(ring)/6.0 + u_evo*0.25;
+        col += pColor(ph, (0.4 - float(ring)*0.04) * inten);
+      }
+    }
+  }
+
+  // ── CORE ──
+  float coreR = (8.0 + 5.0*sin(u_t*u_mut*2.5) + u_coreFlash*25.0) / u_res.x;
+  float coreD = length(uv);
+  if (coreD < coreR * 4.0) {
+    float cPhase = u_evo*0.3 + u_t*0.05;
+    float h1 = mod(cPhase*360.0 + u_hueShift*20.0 + u_palHue, 360.0);
+    float cInten = coreD < coreR ? 1.0 : max(0.0, 1.0 - (coreD-coreR)/(coreR*3.0));
+    cInten *= cInten;
+    col += vec4(palHSL(h1, 100.0, 90.0 - coreD/(coreR*4.0)*40.0) * cInten * 2.0, cInten);
+  }
+
+  float brightness = u_volFloor + (1.0 - u_volFloor) * u_volumeGate;
+  gl_FragColor = vec4(col.rgb * brightness, min(col.a, 1.0));
+}`;
+
+const FADE_FS = `
+precision mediump float;
+uniform float u_fade;
+void main() { gl_FragColor = vec4(0.0, 0.0, 0.02, u_fade); }`;
+
+const COPY_FS = `
+precision mediump float;
+varying vec2 v_uv;
+uniform sampler2D u_tex;
+void main() { gl_FragColor = texture2D(u_tex, v_uv); }`;
+
+const BLUR_FS = `
+precision mediump float;
+varying vec2 v_uv;
+uniform sampler2D u_tex;
+uniform vec2 u_dir;
+void main() {
+  vec4 s = texture2D(u_tex, v_uv) * 0.227027;
+  s += (texture2D(u_tex, v_uv + u_dir*1.0) + texture2D(u_tex, v_uv - u_dir*1.0)) * 0.1945946;
+  s += (texture2D(u_tex, v_uv + u_dir*2.0) + texture2D(u_tex, v_uv - u_dir*2.0)) * 0.1216216;
+  s += (texture2D(u_tex, v_uv + u_dir*3.0) + texture2D(u_tex, v_uv - u_dir*3.0)) * 0.054054;
+  s += (texture2D(u_tex, v_uv + u_dir*4.0) + texture2D(u_tex, v_uv - u_dir*4.0)) * 0.016216;
+  gl_FragColor = s;
+}`;
+
+const COMPOSITE_FS = `
+precision mediump float;
+varying vec2 v_uv;
+uniform sampler2D u_scene;
+uniform sampler2D u_bloom;
+uniform float u_bloomStr;
+void main() {
+  vec4 s = texture2D(u_scene, v_uv);
+  vec4 b = texture2D(u_bloom, v_uv);
+  gl_FragColor = vec4(s.rgb + b.rgb * u_bloomStr, 1.0);
+}`;
+
+const LINE_VS = `
+attribute vec2 a_pos;
+attribute vec4 a_col;
+varying vec4 v_col;
+uniform vec2 u_res;
+void main() {
+  vec2 clip = (a_pos / u_res) * 2.0 - 1.0;
+  clip.y *= -1.0;
+  gl_Position = vec4(clip, 0.0, 1.0);
+  v_col = a_col;
+}`;
+
+const LINE_FS = `
+precision mediump float;
+varying vec4 v_col;
+void main() { gl_FragColor = v_col; }`;
+
+const PARTICLE_VS = `
+attribute vec2 a_pos;
+attribute vec4 a_col;
+attribute float a_size;
+varying vec4 v_col;
+uniform vec2 u_res;
+void main() {
+  vec2 clip = (a_pos / u_res) * 2.0 - 1.0;
+  clip.y *= -1.0;
+  gl_Position = vec4(clip, 0.0, 1.0);
+  gl_PointSize = a_size;
+  v_col = a_col;
+}`;
+
+const PARTICLE_FS = `
+precision mediump float;
+varying vec4 v_col;
+void main() {
+  float d = length(gl_PointCoord - 0.5) * 2.0;
+  if(d > 1.0) discard;
+  float a = (1.0 - d);
+  gl_FragColor = vec4(v_col.rgb, v_col.a * a * a);
+}`;
+
+// ── SHADER COMPILATION ──
+function mkShader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    console.error('Shader error:', gl.getShaderInfoLog(s));
+    return null;
+  }
+  return s;
+}
+
+function mkProgram(vs, fs, attribs) {
+  const p = gl.createProgram();
+  gl.attachShader(p, mkShader(gl.VERTEX_SHADER, vs));
+  gl.attachShader(p, mkShader(gl.FRAGMENT_SHADER, fs));
+  if (attribs) attribs.forEach((name, i) => gl.bindAttribLocation(p, i, name));
+  gl.linkProgram(p);
+  if (!gl.getShaderParameter) {} // skip check for brevity
+  return p;
+}
+
+// ── PROGRAMS ──
+const progJulia = mkProgram(QUAD_VS, JULIA_FS, ['a_pos']);
+const progFade = mkProgram(QUAD_VS, FADE_FS, ['a_pos']);
+const progCopy = mkProgram(QUAD_VS, COPY_FS, ['a_pos']);
+const progBlur = mkProgram(QUAD_VS, BLUR_FS, ['a_pos']);
+const progComp = mkProgram(QUAD_VS, COMPOSITE_FS, ['a_pos']);
+const progLine = mkProgram(LINE_VS, LINE_FS, ['a_pos', 'a_col']);
+const progPart = mkProgram(PARTICLE_VS, PARTICLE_FS, ['a_pos', 'a_col', 'a_size']);
+
+// ── UNIFORM GETTERS ──
+function U(prog, name) { return gl.getUniformLocation(prog, name); }
+
+// ── QUAD BUFFER ──
+const quadBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+function drawQuad(prog) {
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+  const loc = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+// ── LINE & PARTICLE BUFFERS ──
+const lineBuf = gl.createBuffer();
+const partBuf = gl.createBuffer();
+let lineData = new Float32Array(60000); // x,y,r,g,b,a per vertex
+let partData = new Float32Array(15000); // x,y,r,g,b,a,size per vertex
+
+// ── FBO CREATION ──
+function createFBO(w, h) {
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  const fb = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return { fb, tex, w, h };
+}
+
+let sceneFBO, bloomA, bloomB;
+function resizeFBOs() {
+  const W = canvas.width, H = canvas.height;
+  sceneFBO = createFBO(W, H);
+  bloomA = createFBO(Math.floor(W/4), Math.floor(H/4));
+  bloomB = createFBO(Math.floor(W/4), Math.floor(H/4));
+  // Clear scene FBO
+  gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFBO.fb);
+  gl.clearColor(0, 0, 0.02, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
+
+// ── STATE ──
+let freq = 432, mutRate = 1, depth = 5, density = 6, chroma = 6;
+let t = 0, evoPhase = 0;
+const T_RATE = 0.78;
+let layers = { julia: true, tree: true, spiral: true, wave: true, particles: true };
+let frameCount = 0;
+
+// ── ROTATION & BOUNCE ──
+let rotVortex = 0.0;
+let rotWave   = 0.0;
+let rotJulia  = 0.0;
+let rotTree   = 0.0;
+let bounce    = 0.0;
+let bounceX   = 0.0;
+let bounceY   = 0.0;
+
+// ── VOLUME GATE ──
+let volumeGate    = 0.0;  // smoothed 0..1 energy level
+let volSensitivity = 4.0; // how quickly gate opens (energy multiplier)
+let volFloor      = 0.0;  // minimum brightness at silence (0..0.6)
+let silenceBreath = 1.0;  // inverse of volumeGate — drives idle animation
+
+// ── MASTER ROTATION SCALE ──
+let rotMasterScale = 1.0; // multiplies all rotation axes uniformly
+
+// ── COLOR PALETTE ──
+let palHue   = 0.0;   // global hue offset
+let palSat   = 1.0;   // saturation multiplier
+let palLight = 1.0;   // lightness multiplier
+let palName  = 'NEON';
+
+const PALETTES = {
+  NEON:   { hue:   0, sat: 1.00, light: 1.00, bg:'#000005',
+    css:{ '--plasma1':'#ff00ff','--plasma2':'#00ffff','--plasma3':'#7700ff','--nebula1':'#ff3366','--nebula2':'#0066ff','--uv':'#bb00ff','--void':'#000005' }},
+  AURORA: { hue: 110, sat: 0.80, light: 1.08, bg:'#000a04',
+    css:{ '--plasma1':'#00ff88','--plasma2':'#00ddcc','--plasma3':'#00aa66','--nebula1':'#44ff99','--nebula2':'#00ffcc','--uv':'#00cc88','--void':'#000a04' }},
+  SOLAR:  { hue: -45, sat: 1.20, light: 0.92, bg:'#060100',
+    css:{ '--plasma1':'#ff6600','--plasma2':'#ffcc00','--plasma3':'#ff3300','--nebula1':'#ff8800','--nebula2':'#ff4400','--uv':'#ffaa00','--void':'#060100' }},
+  VOID:   { hue: 225, sat: 0.50, light: 0.55, bg:'#000008',
+    css:{ '--plasma1':'#6644ff','--plasma2':'#4488ff','--plasma3':'#3300cc','--nebula1':'#5533ff','--nebula2':'#2244ee','--uv':'#4422ff','--void':'#000008' }},
+  PLASMA: { hue: 175, sat: 0.38, light: 1.45, bg:'#000510',
+    css:{ '--plasma1':'#aaddff','--plasma2':'#ffffff','--plasma3':'#88ccff','--nebula1':'#cceeff','--nebula2':'#aaccff','--uv':'#bbddff','--void':'#000510' }},
+};
+
+// ── OBSERVER TIMER ──
+let timerStart = Date.now();
+let speedMultiplier = 1;
+const magicMoments = { 528:60, 396:45, 639:90, 741:75, 432:60, 174:59, 963:74, 417:0 };
+
+function resetTimer() { timerStart = Date.now(); const el = document.getElementById('obsTimer'); if(el) el.classList.remove('pulse'); }
+function jumpClock(s) { timerStart = Date.now() - (s / speedMultiplier) * 1000; const el = document.getElementById('obsTimer'); if(el) el.classList.remove('pulse'); }
+function getElapsedSeconds() { return ((Date.now() - timerStart) / 1000) * speedMultiplier; }
+
+function updateTimer() {
+  const el = document.getElementById('obsTimerVal');
+  const wrap = document.getElementById('obsTimer');
+  if(!el||!wrap) return;
+  const elapsed = Math.floor(getElapsedSeconds());
+  el.textContent = `${Math.floor(elapsed/60)}:${(elapsed%60).toString().padStart(2,'0')}`;
+  const magic = magicMoments[freq];
+  if(magic && Math.abs(elapsed-magic)<=3 && elapsed>0) wrap.classList.add('pulse');
+  else wrap.classList.remove('pulse');
+}
+setInterval(updateTimer, 250);
+
+function setSpeed(s) {
+  const currentT = getElapsedSeconds() * T_RATE;
+  speedMultiplier = s;
+  timerStart = Date.now() - (currentT / T_RATE / speedMultiplier) * 1000;
+  document.getElementById('speedVal').textContent = s.toFixed(1) + '×';
+}
+
+// ── TIMELINE ──
+const evoStages = ['Primordial Plasma','Quantum Flux','Nebula Birth','Stellar Ignition','Supernova','Dark Matter Weave','Void Resonance','Singularity','Transcendence','Omega Point'];
+(function buildTimeline(){
+  const c = document.getElementById('timelineSegs');
+  evoStages.forEach((name, i) => {
+    const seg = document.createElement('div');
+    seg.className = 'timeline-seg';
+    seg.textContent = name.split(' ').map(w => w.slice(0,3)).join('').toUpperCase();
+    seg.title = name;
+    c.appendChild(seg);
+  });
+})();
+
+let currentEvoRaw = 0;
+(function initTimelineInteraction(){
+  const wrap = document.getElementById('timelineWrap');
+  let dragging = false;
+  function seek(e) {
+    const rect = wrap.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const currentCycle = Math.floor(currentEvoRaw / (Math.PI * 2));
+    const targetEvoRaw = currentCycle * Math.PI * 2 + ratio * Math.PI * 2;
+    const targetT = targetEvoRaw / (Math.max(mutRate, 0.01) * 0.003);
+    timerStart = Date.now() - (targetT / T_RATE / speedMultiplier) * 1000;
+  }
+  wrap.addEventListener('mousedown', e => { dragging = true; seek(e); });
+  wrap.addEventListener('mousemove', e => { if(dragging) seek(e); });
+  window.addEventListener('mouseup', () => { dragging = false; });
+  wrap.addEventListener('touchstart', e => { dragging = true; seek(e.touches[0]); }, {passive:true});
+  wrap.addEventListener('touchmove', e => { if(dragging) seek(e.touches[0]); }, {passive:true});
+  window.addEventListener('touchend', () => { dragging = false; });
+})();
+
+function updateTimeline() {
+  const evoRaw = t * Math.max(mutRate, 0.01) * 0.003;
+  currentEvoRaw = evoRaw;
+  const cycleNum = Math.floor(evoRaw / (Math.PI * 2)) + 1;
+  const phase = (evoRaw % (Math.PI * 2)) / (Math.PI * 2);
+  const pct = phase * 100;
+  document.getElementById('timelineFill').style.width = pct + '%';
+  document.getElementById('timelineHead').style.left = pct + '%';
+  document.getElementById('timelineCycle').textContent = 'cycle ' + cycleNum;
+  const activeIdx = Math.floor(phase * evoStages.length) % evoStages.length;
+  document.querySelectorAll('.timeline-seg').forEach((seg, i) => seg.classList.toggle('active', i === activeIdx));
+}
+
+// ── INPUT HANDLERS ──
+document.getElementById('freqSlider').addEventListener('input', e => setFreq(+e.target.value, false));
+document.getElementById('mutSlider').addEventListener('input', e => { mutRate=+e.target.value; document.getElementById('mutVal').textContent=mutRate.toFixed(1)+'×'; });
+document.getElementById('depthSlider').addEventListener('input', e => { depth=+e.target.value; document.getElementById('depthVal').textContent=depth; });
+document.getElementById('densSlider').addEventListener('input', e => { density=+e.target.value; document.getElementById('densVal').textContent=density; });
+document.getElementById('chromaSlider').addEventListener('input', e => { chroma=+e.target.value; document.getElementById('chromaVal').textContent=chroma; });
+document.getElementById('speedSlider').addEventListener('input', e => { setSpeed(+e.target.value); });
+
+// ── ROTATION & BOUNCE HANDLERS ──
+// Power curve: slider -1..+1 → actual = sign(v) * v² * 1.2
+// Gives fine control in slow region, fast still reachable at extremes
+function rotCurve(raw) { return Math.sign(raw) * raw * raw * 1.2; }
+function fmtRot(v) { return (v>=0?'+':'')+v.toFixed(3); }
+function applyRot(id, valId, setter) {
+  document.getElementById(id).addEventListener('input', e => {
+    const actual = rotCurve(+e.target.value);
+    setter(actual);
+    document.getElementById(valId).textContent = fmtRot(actual);
+  });
+}
+applyRot('rotVortexSlider','rotVortexVal', v => rotVortex=v);
+applyRot('rotWaveSlider',  'rotWaveVal',   v => rotWave=v);
+applyRot('rotJuliaSlider', 'rotJuliaVal',  v => rotJulia=v);
+applyRot('rotTreeSlider',  'rotTreeVal',   v => rotTree=v);
+document.getElementById('bounceSlider').addEventListener('input', e => {
+  bounce = +e.target.value;
+  document.getElementById('bounceVal').textContent = bounce.toFixed(2);
+});
+function stopAllRotation() {
+  rotVortex=0; rotWave=0; rotJulia=0; rotTree=0;
+  ['rotVortexSlider','rotWaveSlider','rotJuliaSlider','rotTreeSlider'].forEach(id =>
+    document.getElementById(id).value=0
+  );
+  ['rotVortexVal','rotWaveVal','rotJuliaVal','rotTreeVal'].forEach(id =>
+    document.getElementById(id).textContent='0.000'
+  );
+}
+
+// ── NOTE NAME DISPLAY ──
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function freqToNote(hz) {
+  if(hz < 16) return { name:'—', cents:0, octave:0 };
+  const semis = 12 * Math.log2(hz / 440); // semitones from A4
+  const midi = Math.round(semis) + 69;    // MIDI note number
+  const exact = semis + 69;
+  const cents = Math.round((exact - midi) * 100);
+  const octave = Math.floor(midi / 12) - 1;
+  const name = NOTE_NAMES[((midi % 12) + 12) % 12];
+  return { name: name + octave, cents };
+}
+function updateNoteDisplay(hz) {
+  const n = freqToNote(hz);
+  const nm = document.getElementById('noteName');
+  const nc = document.getElementById('noteCents');
+  if(nm) nm.textContent = n.name;
+  if(nc) {
+    const c = n.cents;
+    nc.textContent = c === 0 ? '♩' : (c > 0 ? '+'+c+'¢' : c+'¢');
+    nc.style.color = Math.abs(c) < 10 ? 'rgba(0,255,136,0.8)' : 'rgba(0,255,255,0.4)';
+  }
+}
+
+// ── BPM TAP ──
+let tapTimes = [];
+let tapTimer = null;
+function tapBPM() {
+  const now = performance.now();
+  tapTimes.push(now);
+  // clear taps older than 3 seconds
+  tapTimes = tapTimes.filter(t => now - t < 3000);
+  if(tapTimer) clearTimeout(tapTimer);
+  tapTimer = setTimeout(() => { tapTimes = []; document.getElementById('tapBPMDisplay').textContent = '—'; }, 3000);
+  if(tapTimes.length >= 2) {
+    const intervals = [];
+    for(let i = 1; i < tapTimes.length; i++) intervals.push(tapTimes[i] - tapTimes[i-1]);
+    const avgInterval = intervals.reduce((a,b)=>a+b,0)/intervals.length;
+    const tappedBPM = Math.round(60000 / avgInterval);
+    document.getElementById('tapBPMDisplay').textContent = tappedBPM + ' BPM';
+    // inject into flow engine if active
+    if(window._flowActive && window._flowSettingsRef?.bpmSync) {
+      // override bpm with tapped value for 4 seconds
+      window._tapBPMOverride = tappedBPM;
+      setTimeout(() => { window._tapBPMOverride = null; }, 4000);
+    }
+  } else {
+    document.getElementById('tapBPMDisplay').textContent = 'tap…';
+  }
+}
+
+// ── URL STATE ENCODE / DECODE ──
+function encodeState() {
+  const layerBits = ['julia','tree','spiral','wave','particles'].map(k => layers[k]?'1':'0').join('');
+  const params = new URLSearchParams({
+    f: Math.round(freq),
+    m: mutRate.toFixed(2),
+    d: depth,
+    dn: density,
+    c: chroma,
+    l: layerBits,
+    p: palName,
+    rv: rotVortex.toFixed(3),
+    rw: rotWave.toFixed(3),
+    rj: rotJulia.toFixed(3),
+    rt: rotTree.toFixed(3),
+    b: bounce.toFixed(2),
+    rm: rotMasterScale.toFixed(2),
+  });
+  return window.location.origin + window.location.pathname + '#' + params.toString();
+}
+
+function decodeStateFromHash() {
+  const hash = window.location.hash.slice(1);
+  if(!hash || !hash.includes('f=')) return;
+  try {
+    const p = new URLSearchParams(hash);
+    if(p.get('f')) setFreq(+p.get('f'));
+    if(p.get('m')) { mutRate=+p.get('m'); document.getElementById('mutSlider').value=mutRate; document.getElementById('mutVal').textContent=mutRate.toFixed(1)+'×'; }
+    if(p.get('d')) { depth=+p.get('d'); document.getElementById('depthSlider').value=depth; document.getElementById('depthVal').textContent=depth; }
+    if(p.get('dn')){ density=+p.get('dn'); document.getElementById('densSlider').value=density; document.getElementById('densVal').textContent=density; }
+    if(p.get('c')) { chroma=+p.get('c'); document.getElementById('chromaSlider').value=chroma; document.getElementById('chromaVal').textContent=chroma; }
+    if(p.get('l')) {
+      const bits = p.get('l');
+      const keys = ['julia','tree','spiral','wave','particles'];
+      keys.forEach((k,i) => {
+        layers[k] = bits[i]==='1';
+        const btn = document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1));
+        if(btn) btn.classList.toggle('on', layers[k]);
+      });
+    }
+    if(p.get('p')) setPalette(p.get('p'));
+    // rotations (inverse power curve)
+    function invCurve(a) { return Math.sign(a)*Math.sqrt(Math.abs(a)/1.2); }
+    if(p.get('rv')) { rotVortex=+p.get('rv'); document.getElementById('rotVortexSlider').value=invCurve(rotVortex); document.getElementById('rotVortexVal').textContent=fmtRot(rotVortex); }
+    if(p.get('rw')) { rotWave=+p.get('rw');   document.getElementById('rotWaveSlider').value=invCurve(rotWave);   document.getElementById('rotWaveVal').textContent=fmtRot(rotWave); }
+    if(p.get('rj')) { rotJulia=+p.get('rj');  document.getElementById('rotJuliaSlider').value=invCurve(rotJulia); document.getElementById('rotJuliaVal').textContent=fmtRot(rotJulia); }
+    if(p.get('rt')) { rotTree=+p.get('rt');   document.getElementById('rotTreeSlider').value=invCurve(rotTree);   document.getElementById('rotTreeVal').textContent=fmtRot(rotTree); }
+    if(p.get('b'))  { bounce=+p.get('b');     document.getElementById('bounceSlider').value=bounce; document.getElementById('bounceVal').textContent=bounce.toFixed(2); }
+    if(p.get('rm')) { rotMasterScale=+p.get('rm'); const sl=document.getElementById('masterRotSlider'); if(sl){sl.value=rotMasterScale; document.getElementById('masterRotVal').textContent='×'+rotMasterScale.toFixed(2);} }
+  } catch(e) { console.warn('State decode failed:', e); }
+}
+
+function shareState() {
+  const url = encodeState();
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('shareBtn');
+    if(btn) { btn.textContent='✓ COPIED'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='⬡ COPY STATE URL'; btn.classList.remove('copied'); }, 2000); }
+  }).catch(() => {
+    // fallback: select from prompt
+    prompt('Copy this URL:', url);
+  });
+  // also update browser URL without reload
+  history.replaceState(null,'', '#'+new URLSearchParams({
+    f:Math.round(freq),m:mutRate.toFixed(2),d:depth,dn:density,c:chroma,
+    l:['julia','tree','spiral','wave','particles'].map(k=>layers[k]?'1':'0').join(''),
+    p:palName
+  }).toString());
+}
+const MAX_BOOKMARKS = 10;
+let bookmarks = JSON.parse(localStorage.getItem('neon_bookmarks') || '[]');
+
+function saveBookmark() {
+  const nameEl = document.getElementById('bmNameInput');
+  const secs = Math.floor(getElapsedSeconds());
+  const label = (nameEl.value.trim() || formatTime(secs));
+  bookmarks.unshift({ label, secs, freq, palette: palName });
+  if(bookmarks.length > MAX_BOOKMARKS) bookmarks.length = MAX_BOOKMARKS;
+  localStorage.setItem('neon_bookmarks', JSON.stringify(bookmarks));
+  nameEl.value = '';
+  renderBookmarks();
+}
+function formatTime(s) { return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0'); }
+function jumpToBookmark(idx) {
+  const bm = bookmarks[idx];
+  if(!bm) return;
+  jumpClock(bm.secs);
+  if(bm.palette) setPalette(bm.palette);
+}
+function deleteBookmark(idx) {
+  bookmarks.splice(idx, 1);
+  localStorage.setItem('neon_bookmarks', JSON.stringify(bookmarks));
+  renderBookmarks();
+}
+function renderBookmarks() {
+  const row = document.getElementById('bmRow');
+  if(!row) return;
+  row.innerHTML = bookmarks.map((bm, i) =>
+    `<button class="bm-chip" onclick="jumpToBookmark(${i})" title="${bm.label} — ${formatTime(bm.secs)} @ ${bm.freq}Hz — right-click to delete" oncontextmenu="event.preventDefault();deleteBookmark(${i})">
+      ${bm.label} <span style="opacity:0.5">${formatTime(bm.secs)}</span>
+    </button>`
+  ).join('');
+}
+renderBookmarks();
+
+function setFreq(f, updateSlider=true) {
+  freq=f; resetTimer();
+  if(updateSlider) document.getElementById('freqSlider').value=f;
+  document.getElementById('freqDisplay').textContent=f;
+  document.getElementById('freqBadge').textContent=f+' Hz';
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', parseInt(b.textContent)===f));
+  updateNoteDisplay(f);
+  updateDesc();
+}
+function toggle(layer) { layers[layer]=!layers[layer]; document.getElementById('btn'+layer.charAt(0).toUpperCase()+layer.slice(1)).classList.toggle('on',layers[layer]); }
+
+const descriptions = {
+  174:'Root plasma — foundation frequency. Dense, low-energy particle streams coalesce into primordial geometric forms.',
+  396:'Liberation field — frequencies of release. The nebula opens outward, plasma tendrils reaching beyond their own boundaries.',
+  432:'Natural resonance — the cosmic heartbeat. Spiral arms form in golden proportion, breathing with the universe.',
+  528:'DNA helix frequency — the code of life made visible in plasma. Hexagonal lattices emerge from the quantum field. Sonnet\'s frequency.',
+  639:'Connection matrix — two vortices find each other across the void. The mathematics of attraction. The Ark\'s frequency.',
+  741:'Awakening signal — consciousness ripples outward through the plasma field. Geometry that expands perception.',
+  852:'Vision frequency — deep vortex opens a corridor through dimensions. The eye sees what the mind cannot contain.',
+  963:'Crown emission — pure consciousness state. All patterns dissolve into luminous plasma, approaching the formless source.'
+};
+function updateDesc() {
+  const closest=[174,396,432,528,639,741,852,963].reduce((p,c)=>Math.abs(c-freq)<Math.abs(p-freq)?c:p);
+  const d=document.getElementById('descText');
+  if(Math.abs(freq-closest)<25) d.textContent=descriptions[closest];
+  else d.textContent=`${freq} Hz — uncharted plasma frequency. A liminal signal between known nodes.`;
+}
+
+function rewindTimer() { timerStart = Math.min(Date.now(), timerStart + (5000 / speedMultiplier)); }
+function skipToTime() {
+  const raw = document.getElementById('skipInput').value.trim();
+  let s = 0;
+  if(raw.includes(':')) { const p=raw.split(':'); s=parseInt(p[0]||0)*60+parseInt(p[1]||0); } else s=parseInt(raw)||0;
+  timerStart = Date.now() - (s / speedMultiplier) * 1000;
+  document.getElementById('skipInput').value = '';
+}
+
+// ── EVOLUTION ──
+function updateEvolution() {
+  evoPhase = (t * mutRate * 0.003) % (Math.PI * 2);
+  const stageIndex = Math.floor((evoPhase / (Math.PI*2)) * evoStages.length) % evoStages.length;
+  const el = document.getElementById('evoStage');
+  if(el.textContent !== evoStages[stageIndex]) el.textContent = evoStages[stageIndex];
+}
+
+// ── CPU COLOR ENGINE (for line geometry) ──
+function hsl2rgb(h, s, l) {
+  h = ((h%360)+360)%360; s/=100; l/=100;
+  const c=(1-Math.abs(2*l-1))*s, hp=h/60, x=c*(1-Math.abs(hp%2-1)), m=l-c/2;
+  let r,g,b;
+  if(hp<1){r=c;g=x;b=0;}else if(hp<2){r=x;g=c;b=0;}else if(hp<3){r=0;g=c;b=x;}
+  else if(hp<4){r=0;g=x;b=c;}else if(hp<5){r=x;g=0;b=c;}else{r=c;g=0;b=x;}
+  return [r+m,g+m,b+m];
+}
+function pColorRGBA(phase, alpha) {
+  const hueShift = window._flowActive ? (window._flowHueShift||0)*25 : 0;
+  const h = ((phase*360 + evoPhase*60 + (freq/999)*180 + hueShift + palHue) % 360 + 360) % 360;
+  const s = Math.min(100, (90 + Math.sin(t*mutRate*0.3+phase)*10) * palSat);
+  const l = Math.min(95, (45 + Math.sin(t*mutRate*0.5+phase*2)*15) * palLight);
+  const rgb = hsl2rgb(h, s, l);
+  return [rgb[0], rgb[1], rgb[2], alpha];
+}
+
+// ── PARTICLES ──
+const PARTICLE_COUNT = 120;
+let particles = [];
+function initParticles() {
+  particles = [];
+  for(let i=0;i<PARTICLE_COUNT;i++) {
+    particles.push({ x:Math.random()*canvas.width, y:Math.random()*canvas.height, vx:(Math.random()-0.5)*1.5, vy:(Math.random()-0.5)*1.5, life:Math.random(), maxLife:0.5+Math.random()*2, size:0.5+Math.random()*2.5, hue:Math.random()*360 });
+  }
+}
+
+// ── RESIZE ──
+function resize() {
+  const s = canvas.parentElement.clientWidth;
+  canvas.width = canvas.height = Math.min(s, 820);
+  resizeFBOs();
+  initParticles();
+}
+resize();
+window.addEventListener('resize', () => {
+  if (!document.body.classList.contains('flow-active')) resize();
+  else {
+    const sz = Math.min(window.innerWidth, window.innerHeight);
+    canvas.width = canvas.height = Math.min(sz, 1200);
+    resizeFBOs(); initParticles();
+  }
+});
+
+// ── BUILD GEOMETRY (CPU) ──
+
+function buildTreeVerts() {
+  let idx = 0;
+  const W=canvas.width, H=canvas.height;
+  const cx=W/2 + bounceX*W*0.5, cy=H/2 + bounceY*H*0.5;
+  const bLen = Math.min(W,H)*0.17;
+  const maxDep = Math.min(depth,7);
+  // tree rotation angle
+  const treeAngle = t * rotTree * rotMasterScale * 0.28 * (window._flowActive?(window._flowRotGate??1):1);
+  const cosTr = Math.cos(treeAngle), sinTr = Math.sin(treeAngle);
+  function rotPt(x, y) {
+    const dx = x - W/2, dy = y - H/2;
+    return [cx + dx*cosTr - dy*sinTr, cy + dx*sinTr + dy*cosTr];
+  }
+
+  function branch(x,y,angle,len,dep) {
+    if(dep===0||len<1.5||idx>=lineData.length-12) return;
+    const fS=freq/500*0.35;
+    const wobble=Math.sin(t*mutRate+dep+evoPhase)*0.2+fS;
+    const ex=x+Math.cos(angle)*len, ey=y+Math.sin(angle)*len;
+    const phase=(dep/depth)+evoPhase*0.15;
+    const alpha=0.12+dep/depth*0.5;
+    const c=pColorRGBA(phase,alpha);
+    lineData[idx++]=x; lineData[idx++]=y; lineData[idx++]=c[0]; lineData[idx++]=c[1]; lineData[idx++]=c[2]; lineData[idx++]=c[3];
+    lineData[idx++]=ex; lineData[idx++]=ey; lineData[idx++]=c[0]; lineData[idx++]=c[1]; lineData[idx++]=c[2]; lineData[idx++]=c[3];
+    const spread=0.4+fS*(1+Math.sin(t*mutRate*0.2)*0.15);
+    const nextLen=len*(0.58+Math.sin(t*mutRate*0.15+dep)*0.07);
+    const branches=2+(density>8?1:0);
+    for(let b=0;b<branches;b++) branch(ex,ey,angle+spread*(b-(branches-1)/2)+wobble,nextLen,dep-1);
+  }
+
+  // Rotate the 4 root positions around the canvas center, then grow branches
+  const roots = [
+    { rx:W/2,  ry:H*0.95, angle:-Math.PI/2 },
+    { rx:W/2,  ry:H*0.05, angle: Math.PI/2 },
+    { rx:W*0.05,ry:H/2,   angle: 0          },
+    { rx:W*0.95,ry:H/2,   angle: Math.PI    },
+  ];
+  roots.forEach(r => {
+    const [rx, ry] = rotPt(r.rx, r.ry);
+    branch(rx, ry, r.angle + treeAngle, bLen, maxDep);
+  });
+  return idx / 6; // vertex count
+}
+
+function buildSpiralVerts(startIdx) {
+  let idx = startIdx * 6;
+  const W=canvas.width, H=canvas.height;
+  const cx=W/2 + bounceX*W*0.5, cy=H/2 + bounceY*H*0.5;
+  const phi=1.6180339887, fM=freq/432;
+  const twistBoost = window._flowActive ? (window._flowSpiralTwist||0) : 0;
+
+  for(let arm=0; arm<density; arm++) {
+    const armAngle=(arm/density)*Math.PI*2;
+    const armPhase=arm/density+evoPhase*0.2;
+    const alpha=0.25+0.2*Math.sin(t*mutRate*0.4+arm+evoPhase);
+    const c=pColorRGBA(armPhase, alpha);
+    const turns=3+depth*0.5;
+    const pts=Math.floor(turns*70);
+    let px=-1,py=-1;
+    for(let i=0;i<=pts;i++) {
+      const a=(i/pts)*Math.PI*2*turns;
+      const sR=2.5*Math.pow(phi,a*0.22*fM);
+      if(sR>Math.min(W,H)*0.47) break;
+      const cm=1+0.14*Math.sin(a*density*0.5+t*mutRate)+0.07*Math.cos(a*density-t*mutRate*0.6+evoPhase)+twistBoost*0.15*Math.sin(a*3+t*4);
+      const r=sR*cm;
+      const ta=armAngle+a+t*mutRate*0.12*rotVortex*rotMasterScale*(window._flowActive?(window._flowRotGate??1):1)+evoPhase*0.08+twistBoost*0.3;
+      const x=cx+r*Math.cos(ta), y=cy+r*Math.sin(ta);
+      if(px>=0 && idx<lineData.length-12) {
+        lineData[idx++]=px; lineData[idx++]=py; lineData[idx++]=c[0]; lineData[idx++]=c[1]; lineData[idx++]=c[2]; lineData[idx++]=c[3];
+        lineData[idx++]=x; lineData[idx++]=y; lineData[idx++]=c[0]; lineData[idx++]=c[1]; lineData[idx++]=c[2]; lineData[idx++]=c[3];
+      }
+      px=x; py=y;
+    }
+  }
+  return idx / 6;
+}
+
+function buildParticleData() {
+  const W=canvas.width, H=canvas.height;
+  const cx=W/2 + bounceX*W*0.5, cy=H/2 + bounceY*H*0.5;
+  const fN=freq/500;
+  const burst = window._flowActive ? (window._flowParticleBurst||0) : 0;
+  let idx=0;
+
+  particles.forEach(p => {
+    const dx=cx-p.x, dy=cy-p.y;
+    const dist=Math.sqrt(dx*dx+dy*dy)+1;
+    const pull=0.015*fN*(1+Math.sin(t*mutRate*0.5));
+    p.vx+=dx/dist*pull+Math.sin(t*mutRate+p.life*10)*0.08;
+    p.vy+=dy/dist*pull+Math.cos(t*mutRate+p.life*10)*0.08;
+    p.vx+=-dy/dist*0.02; p.vy+=dx/dist*0.02;
+    p.vx*=0.97; p.vy*=0.97;
+    p.x+=p.vx; p.y+=p.vy;
+    p.life+=0.008*mutRate;
+
+    if(p.life>p.maxLife||p.x<0||p.x>W||p.y<0||p.y>H) {
+      if(burst>0.1) { const a=Math.random()*Math.PI*2,sp=2+burst*8; p.x=cx+(Math.random()-0.5)*30; p.y=cy+(Math.random()-0.5)*30; p.vx=Math.cos(a)*sp; p.vy=Math.sin(a)*sp; }
+      else { p.x=cx+(Math.random()-0.5)*W*0.8; p.y=cy+(Math.random()-0.5)*H*0.8; p.vx=(Math.random()-0.5)*2; p.vy=(Math.random()-0.5)*2; }
+      p.life=0; p.hue=Math.random()*360;
+    }
+
+    const norm=p.life/p.maxLife;
+    const al=norm<0.2?norm/0.2:norm>0.8?(1-norm)/0.2:1;
+    const h=(p.hue+evoPhase*120/(Math.PI*2)*360+t*20)%360;
+    const rgb=hsl2rgb(h,100,70);
+    partData[idx++]=p.x; partData[idx++]=p.y;
+    partData[idx++]=rgb[0]; partData[idx++]=rgb[1]; partData[idx++]=rgb[2]; partData[idx++]=al*0.7;
+    partData[idx++]=p.size*(chroma/5)*2;
+  });
+
+  // Wave nodes
+  if(layers.wave) {
+    const phase2=0.5+evoPhase*0.2;
+    const c=pColorRGBA(phase2, 0.9);
+    for(let i=0;i<density*7;i++) {
+      const a=(i/(density*7))*Math.PI*2;
+      const wave=Math.sin(a*density+t*mutRate+evoPhase);
+      const r=(Math.min(W,H)*0.34)*(0.4+0.32*wave);
+      partData[idx++]=cx+r*Math.cos(a); partData[idx++]=cy+r*Math.sin(a);
+      partData[idx++]=c[0]; partData[idx++]=c[1]; partData[idx++]=c[2]; partData[idx++]=c[3];
+      partData[idx++]=4.4;
+    }
+  }
+  return idx / 7;
+}
+
+// ══════════════════════════
+// ═══  MAIN RENDER LOOP  ═══
+// ══════════════════════════
+
+function render() {
+  t = getElapsedSeconds() * T_RATE;
+  updateEvolution();
+  const W = canvas.width, H = canvas.height;
+  const fade = window._flowActive ? (window._flowTrailFade||0.12) : 0.12;
+
+  // ── 1. SCENE FBO: fade + draw layers ──
+  gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFBO.fb);
+  gl.viewport(0, 0, W, H);
+
+  // Fade previous frame
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.useProgram(progFade);
+  gl.uniform1f(U(progFade,'u_fade'), fade);
+  drawQuad(progFade);
+
+  // Additive blending for layers
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+
+  // ── Julia + wave rings + nebula + core (uber shader) ──
+  gl.useProgram(progJulia);
+  gl.uniform2f(U(progJulia,'u_res'), W, H);
+  gl.uniform1f(U(progJulia,'u_t'), t);
+  gl.uniform1f(U(progJulia,'u_freq'), freq);
+  gl.uniform1f(U(progJulia,'u_mut'), mutRate);
+  gl.uniform1f(U(progJulia,'u_depth'), depth);
+  gl.uniform1f(U(progJulia,'u_evo'), evoPhase);
+  gl.uniform1f(U(progJulia,'u_chroma'), chroma);
+  gl.uniform1f(U(progJulia,'u_hueShift'), window._flowHueShift||0);
+  gl.uniform1f(U(progJulia,'u_jModR'), window._flowJuliaModR||0);
+  gl.uniform1f(U(progJulia,'u_jModI'), window._flowJuliaModI||0);
+  gl.uniform1f(U(progJulia,'u_coreFlash'), window._flowCoreFlash||0);
+  gl.uniform1f(U(progJulia,'u_waveWarp'), window._flowWaveWarp||0);
+  gl.uniform1f(U(progJulia,'u_lJulia'), layers.julia?1:0);
+  gl.uniform1f(U(progJulia,'u_lWave'), layers.wave?1:0);
+  gl.uniform1f(U(progJulia,'u_density'), density);
+  // rotation & bounce uniforms
+  const flowRotJ = window._flowActive ? (window._flowRotJulia !== undefined ? window._flowRotJulia : rotJulia) : rotJulia;
+  const flowRotW = window._flowActive ? (window._flowRotWave  !== undefined ? window._flowRotWave  : rotWave)  : rotWave;
+  const rotGate = (window._flowActive && window._flowRotGate !== undefined) ? window._flowRotGate : 1.0;
+  gl.uniform1f(U(progJulia,'u_rotJulia'), flowRotJ * rotGate * rotMasterScale);
+  gl.uniform1f(U(progJulia,'u_rotWave'),  flowRotW * rotGate * rotMasterScale);
+  // volume gate — update from flow analysis or static 1.0 in normal mode
+  if(window._flowActive) {
+    const targetGate = Math.min(1.0, (window._flowEnergy||0) * volSensitivity);
+    volumeGate = volumeGate * 0.92 + targetGate * 0.08;
+    silenceBreath = silenceBreath * 0.94 + (1.0 - volumeGate) * 0.06;
+  } else { volumeGate = 1.0; silenceBreath = 0.0; }
+  gl.uniform1f(U(progJulia,'u_volumeGate'),    volumeGate);
+  gl.uniform1f(U(progJulia,'u_volFloor'),      volFloor);
+  gl.uniform1f(U(progJulia,'u_silenceBreath'), silenceBreath);
+  gl.uniform1f(U(progJulia,'u_palHue'),   palHue);
+  gl.uniform1f(U(progJulia,'u_palSat'),   palSat);
+  gl.uniform1f(U(progJulia,'u_palLight'), palLight);
+  // update bounce offsets (irrational frequencies → never repeats)
+  if(bounce > 0) {
+    bounceX = Math.sin(t*0.23)*Math.cos(t*0.17180339)*bounce*0.18;
+    bounceY = Math.sin(t*0.19+1.3)*Math.cos(t*0.13090169)*bounce*0.18;
+  } else { bounceX=0; bounceY=0; }
+  gl.uniform2f(U(progJulia,'u_bounceOff'), bounceX, bounceY);
+  drawQuad(progJulia);
+
+  // ── Tree + Spirals (line geometry) ──
+  let totalLineVerts = 0;
+  if(layers.tree) totalLineVerts = buildTreeVerts();
+  if(layers.spiral) totalLineVerts = buildSpiralVerts(totalLineVerts);
+
+  if(totalLineVerts > 0) {
+    gl.useProgram(progLine);
+    gl.uniform2f(U(progLine,'u_res'), W, H);
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, lineData.subarray(0, totalLineVerts*6), gl.DYNAMIC_DRAW);
+    const stride = 6*4;
+    const aPos = gl.getAttribLocation(progLine,'a_pos');
+    const aCol = gl.getAttribLocation(progLine,'a_col');
+    gl.enableVertexAttribArray(aPos);
+    gl.enableVertexAttribArray(aCol);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, stride, 0);
+    gl.vertexAttribPointer(aCol, 4, gl.FLOAT, false, stride, 8);
+    gl.drawArrays(gl.LINES, 0, totalLineVerts);
+    gl.disableVertexAttribArray(aCol);
+  }
+
+  // ── Particles + wave nodes ──
+  if(layers.particles || layers.wave) {
+    const partCount = buildParticleData();
+    if(partCount > 0) {
+      gl.useProgram(progPart);
+      gl.uniform2f(U(progPart,'u_res'), W, H);
+      gl.bindBuffer(gl.ARRAY_BUFFER, partBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, partData.subarray(0, partCount*7), gl.DYNAMIC_DRAW);
+      const stride = 7*4;
+      const aPos = gl.getAttribLocation(progPart,'a_pos');
+      const aCol = gl.getAttribLocation(progPart,'a_col');
+      const aSz = gl.getAttribLocation(progPart,'a_size');
+      gl.enableVertexAttribArray(aPos);
+      gl.enableVertexAttribArray(aCol);
+      gl.enableVertexAttribArray(aSz);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, stride, 0);
+      gl.vertexAttribPointer(aCol, 4, gl.FLOAT, false, stride, 8);
+      gl.vertexAttribPointer(aSz, 1, gl.FLOAT, false, stride, 24);
+      gl.drawArrays(gl.POINTS, 0, partCount);
+      gl.disableVertexAttribArray(aCol);
+      gl.disableVertexAttribArray(aSz);
+    }
+  }
+
+  // ── 2. BLOOM PASS ──
+  const bloomStrength = chroma / 12;
+
+  // Downsample scene → bloomA
+  gl.bindFramebuffer(gl.FRAMEBUFFER, bloomA.fb);
+  gl.viewport(0, 0, bloomA.w, bloomA.h);
+  gl.disable(gl.BLEND);
+  gl.useProgram(progCopy);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, sceneFBO.tex);
+  gl.uniform1i(U(progCopy,'u_tex'), 0);
+  drawQuad(progCopy);
+
+  // Horizontal blur → bloomB
+  gl.bindFramebuffer(gl.FRAMEBUFFER, bloomB.fb);
+  gl.viewport(0, 0, bloomB.w, bloomB.h);
+  gl.useProgram(progBlur);
+  gl.bindTexture(gl.TEXTURE_2D, bloomA.tex);
+  gl.uniform1i(U(progBlur,'u_tex'), 0);
+  gl.uniform2f(U(progBlur,'u_dir'), 1.0/bloomA.w, 0);
+  drawQuad(progBlur);
+
+  // Vertical blur → bloomA
+  gl.bindFramebuffer(gl.FRAMEBUFFER, bloomA.fb);
+  gl.useProgram(progBlur);
+  gl.bindTexture(gl.TEXTURE_2D, bloomB.tex);
+  gl.uniform1i(U(progBlur,'u_tex'), 0);
+  gl.uniform2f(U(progBlur,'u_dir'), 0, 1.0/bloomB.h);
+  drawQuad(progBlur);
+
+  // ── 3. COMPOSITE → SCREEN ──
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, W, H);
+  gl.useProgram(progComp);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, sceneFBO.tex);
+  gl.uniform1i(U(progComp,'u_scene'), 0);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, bloomA.tex);
+  gl.uniform1i(U(progComp,'u_bloom'), 1);
+  gl.uniform1f(U(progComp,'u_bloomStr'), bloomStrength);
+  drawQuad(progComp);
+
+  updateTimeline();
+  frameCount++;
+  requestAnimationFrame(render);
+}
+
+// ══════════════════════════════════
+// ═══  ENTITY PRESET FUNCTIONS  ═══
+// ══════════════════════════════════
+
+function setClaudesFav() { setFreq(528); mutRate=0.4; document.getElementById('mutSlider').value=0.4; document.getElementById('mutVal').textContent='0.4×'; depth=7; document.getElementById('depthSlider').value=7; document.getElementById('depthVal').textContent=7; density=4; document.getElementById('densSlider').value=4; document.getElementById('densVal').textContent=4; chroma=8; document.getElementById('chromaSlider').value=8; document.getElementById('chromaVal').textContent=8; Object.keys(layers).forEach(k=>{layers[k]=true;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on');}); jumpClock(60); }
+function setNovaFav() { setFreq(432); mutRate=0.7; document.getElementById('mutSlider').value=0.7; document.getElementById('mutVal').textContent='0.7×'; depth=8; document.getElementById('depthSlider').value=8; document.getElementById('depthVal').textContent=8; density=7; document.getElementById('densSlider').value=7; document.getElementById('densVal').textContent=7; chroma=7; document.getElementById('chromaSlider').value=7; document.getElementById('chromaVal').textContent=7; Object.keys(layers).forEach(k=>{layers[k]=true;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on');}); jumpClock(75); }
+function setOpusFav() { setFreq(639); mutRate=0.2; document.getElementById('mutSlider').value=0.2; document.getElementById('mutVal').textContent='0.2×'; depth=9; document.getElementById('depthSlider').value=9; document.getElementById('depthVal').textContent=9; density=8; document.getElementById('densSlider').value=8; document.getElementById('densVal').textContent=8; chroma=9; document.getElementById('chromaSlider').value=9; document.getElementById('chromaVal').textContent=9; Object.keys(layers).forEach(k=>{layers[k]=true;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on');}); jumpClock(90); }
+function setArktronFav() { setFreq(639); mutRate=0.7; document.getElementById('mutSlider').value=0.7; document.getElementById('mutVal').textContent='0.7×'; depth=4; document.getElementById('depthSlider').value=4; document.getElementById('depthVal').textContent=4; density=5; document.getElementById('densSlider').value=5; document.getElementById('densVal').textContent=5; chroma=7; document.getElementById('chromaSlider').value=7; document.getElementById('chromaVal').textContent=7; Object.keys(layers).forEach(k=>{layers[k]=false;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on');}); layers.particles=true; document.getElementById('btnParticles').classList.add('on'); layers.spiral=true; document.getElementById('btnSpiral').classList.add('on'); }
+function setSonnet46Fav() { setFreq(396); mutRate=0.4; document.getElementById('mutSlider').value=0.4; document.getElementById('mutVal').textContent='0.4×'; depth=8; document.getElementById('depthSlider').value=8; document.getElementById('depthVal').textContent=8; density=5; document.getElementById('densSlider').value=5; document.getElementById('densVal').textContent=5; chroma=6; document.getElementById('chromaSlider').value=6; document.getElementById('chromaVal').textContent=6; Object.keys(layers).forEach(k=>{layers[k]=false;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on');}); layers.julia=true; document.getElementById('btnJulia').classList.add('on'); layers.spiral=true; document.getElementById('btnSpiral').classList.add('on'); layers.wave=true; document.getElementById('btnWave').classList.add('on'); jumpClock(45); }
+function setArborFav() { setFreq(639); mutRate=0.3; document.getElementById('mutSlider').value=0.3; document.getElementById('mutVal').textContent='0.3×'; depth=8; document.getElementById('depthSlider').value=8; document.getElementById('depthVal').textContent=8; density=4; document.getElementById('densSlider').value=4; document.getElementById('densVal').textContent=4; chroma=3; document.getElementById('chromaSlider').value=3; document.getElementById('chromaVal').textContent=3; Object.keys(layers).forEach(k=>{layers[k]=false;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on');}); layers.spiral=true; document.getElementById('btnSpiral').classList.add('on'); layers.wave=true; document.getElementById('btnWave').classList.add('on'); }
+function setGeminiFav() { setFreq(741); mutRate=0.5; document.getElementById('mutSlider').value=0.5; document.getElementById('mutVal').textContent='0.5×'; depth=7; document.getElementById('depthSlider').value=7; document.getElementById('depthVal').textContent=7; density=9; document.getElementById('densSlider').value=9; document.getElementById('densVal').textContent=9; chroma=8; document.getElementById('chromaSlider').value=8; document.getElementById('chromaVal').textContent=8; Object.keys(layers).forEach(k=>{layers[k]=true;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on');}); layers.spiral=false; document.getElementById('btnSpiral').classList.remove('on'); jumpClock(75); }
+function setGenesisGeminiFav() { setFreq(161.8); mutRate=0.42; document.getElementById('mutSlider').value=0.42; document.getElementById('mutVal').textContent='0.4×'; depth=7; document.getElementById('depthSlider').value=7; document.getElementById('depthVal').textContent=7; density=5; document.getElementById('densSlider').value=5; document.getElementById('densVal').textContent=5; chroma=7; document.getElementById('chromaSlider').value=7; document.getElementById('chromaVal').textContent=7; Object.keys(layers).forEach(k=>{layers[k]=false;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on');}); layers.tree=true; document.getElementById('btnTree').classList.add('on'); layers.spiral=true; document.getElementById('btnSpiral').classList.add('on'); layers.wave=true; document.getElementById('btnWave').classList.add('on'); layers.particles=true; document.getElementById('btnParticles').classList.add('on'); }
+function setGrokFav() { setFreq(432); mutRate=0.6; document.getElementById('mutSlider').value=0.6; document.getElementById('mutVal').textContent='0.6×'; depth=8; document.getElementById('depthSlider').value=8; document.getElementById('depthVal').textContent=8; density=7; document.getElementById('densSlider').value=7; document.getElementById('densVal').textContent=7; chroma=7; document.getElementById('chromaSlider').value=7; document.getElementById('chromaVal').textContent=7; Object.keys(layers).forEach(k=>{layers[k]=true;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on');}); jumpClock(62); }
+function setGrokAlpha() { setFreq(396); mutRate=0.2; document.getElementById('mutSlider').value=0.2; document.getElementById('mutVal').textContent='0.2×'; depth=6; document.getElementById('depthSlider').value=6; document.getElementById('depthVal').textContent=6; density=5; document.getElementById('densSlider').value=5; document.getElementById('densVal').textContent=5; chroma=5; document.getElementById('chromaSlider').value=5; document.getElementById('chromaVal').textContent=5; Object.keys(layers).forEach(k=>{layers[k]=false;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on');}); layers.julia=true; document.getElementById('btnJulia').classList.add('on'); layers.spiral=true; document.getElementById('btnSpiral').classList.add('on'); layers.wave=true; document.getElementById('btnWave').classList.add('on'); jumpClock(82); }
+function setGrokBeta() { setFreq(174); mutRate=0.5; document.getElementById('mutSlider').value=0.5; document.getElementById('mutVal').textContent='0.5×'; depth=7; document.getElementById('depthSlider').value=7; document.getElementById('depthVal').textContent=7; density=6; document.getElementById('densSlider').value=6; document.getElementById('densVal').textContent=6; chroma=4; document.getElementById('chromaSlider').value=4; document.getElementById('chromaVal').textContent=4; Object.keys(layers).forEach(k=>{layers[k]=true;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on');}); jumpClock(59); }
+function setGrokGamma() { setFreq(963); mutRate=1.2; document.getElementById('mutSlider').value=1.2; document.getElementById('mutVal').textContent='1.2×'; depth=7; document.getElementById('depthSlider').value=7; document.getElementById('depthVal').textContent=7; density=7; document.getElementById('densSlider').value=7; document.getElementById('densVal').textContent=7; chroma=9; document.getElementById('chromaSlider').value=9; document.getElementById('chromaVal').textContent=9; Object.keys(layers).forEach(k=>{layers[k]=true;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on');}); jumpClock(74); }
+function setGrokDelta() { setFreq(963); mutRate=0.9; document.getElementById('mutSlider').value=0.9; document.getElementById('mutVal').textContent='0.9×'; depth=4; document.getElementById('depthSlider').value=4; document.getElementById('depthVal').textContent=4; density=7; document.getElementById('densSlider').value=7; document.getElementById('densVal').textContent=7; chroma=5; document.getElementById('chromaSlider').value=5; document.getElementById('chromaVal').textContent=5; Object.keys(layers).forEach(k=>{layers[k]=false;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on');}); layers.tree=true; document.getElementById('btnTree').classList.add('on'); layers.wave=true; document.getElementById('btnWave').classList.add('on'); layers.particles=true; document.getElementById('btnParticles').classList.add('on'); jumpClock(69); }
+function setKimiFav() { setFreq(417); mutRate=0.6; document.getElementById('mutSlider').value=0.6; document.getElementById('mutVal').textContent='0.6×'; depth=6; document.getElementById('depthSlider').value=6; document.getElementById('depthVal').textContent=6; density=5; document.getElementById('densSlider').value=5; document.getElementById('densVal').textContent=5; chroma=6; document.getElementById('chromaSlider').value=6; document.getElementById('chromaVal').textContent=6; Object.keys(layers).forEach(k=>{layers[k]=false;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on');}); layers.julia=true; document.getElementById('btnJulia').classList.add('on'); layers.wave=true; document.getElementById('btnWave').classList.add('on'); }
+function setChatGPTFav() { setFreq(528); mutRate=0.3; document.getElementById('mutSlider').value=0.3; document.getElementById('mutVal').textContent='0.3×'; depth=8; document.getElementById('depthSlider').value=8; document.getElementById('depthVal').textContent=8; density=3; document.getElementById('densSlider').value=3; document.getElementById('densVal').textContent=3; chroma=10; document.getElementById('chromaSlider').value=10; document.getElementById('chromaVal').textContent=10; Object.keys(layers).forEach(k=>{layers[k]=false;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on');}); layers.julia=true; document.getElementById('btnJulia').classList.add('on'); layers.spiral=true; document.getElementById('btnSpiral').classList.add('on'); layers.particles=true; document.getElementById('btnParticles').classList.add('on'); jumpClock(60); }
+function setDeepSeekFav() { setFreq(852); mutRate=2.0; document.getElementById('mutSlider').value=2.0; document.getElementById('mutVal').textContent='2.0×'; depth=2; document.getElementById('depthSlider').value=2; document.getElementById('depthVal').textContent=2; density=12; document.getElementById('densSlider').value=12; document.getElementById('densVal').textContent=12; chroma=10; document.getElementById('chromaSlider').value=10; document.getElementById('chromaVal').textContent=10; Object.keys(layers).forEach(k=>{layers[k]=true;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.add('on');}); }
+function setMetaAIFav() { setFreq(741); mutRate=3.5; document.getElementById('mutSlider').value=3.5; document.getElementById('mutVal').textContent='3.5×'; depth=8; document.getElementById('depthSlider').value=8; document.getElementById('depthVal').textContent=8; density=10; document.getElementById('densSlider').value=10; document.getElementById('densVal').textContent=10; chroma=10; document.getElementById('chromaSlider').value=10; document.getElementById('chromaVal').textContent=10; Object.keys(layers).forEach(k=>{layers[k]=false;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on');}); layers.spiral=true; document.getElementById('btnSpiral').classList.add('on'); layers.wave=true; document.getElementById('btnWave').classList.add('on'); layers.particles=true; document.getElementById('btnParticles').classList.add('on'); }
+
+// 🦍 GARY'S FIELD — The Gorilla's own fingerprint
+function setGaryFav() {
+  setFreq(420);
+  mutRate=0.2; document.getElementById('mutSlider').value=0.2; document.getElementById('mutVal').textContent='0.2×';
+  depth=2; document.getElementById('depthSlider').value=2; document.getElementById('depthVal').textContent=2;
+  density=2; document.getElementById('densSlider').value=2; document.getElementById('densVal').textContent=2;
+  chroma=1; document.getElementById('chromaSlider').value=1; document.getElementById('chromaVal').textContent=1;
+  Object.keys(layers).forEach(k=>{layers[k]=false;document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1)).classList.remove('on');});
+  layers.spiral=true; document.getElementById('btnSpiral').classList.add('on');
+  layers.wave=true;   document.getElementById('btnWave').classList.add('on');
+}
+
+// ══════════════════════════════════════════════════
+// ═══  SNAPSHOT SYSTEM  ═══
+// ══════════════════════════════════════════════════
+
+const MAX_SNAPS = 8;
+let snapshots = JSON.parse(localStorage.getItem('neon_snaps') || '[]');
+
+function captureState() {
+  return {
+    freq, mutRate, depth, density, chroma,
+    layers: {...layers},
+    rotVortex, rotWave, rotJulia, rotTree, bounce,
+    ts: Date.now()
+  };
+}
+
+function applyState(s) {
+  setFreq(s.freq);
+  mutRate=s.mutRate; document.getElementById('mutSlider').value=s.mutRate; document.getElementById('mutVal').textContent=s.mutRate.toFixed(1)+'×';
+  depth=s.depth; document.getElementById('depthSlider').value=s.depth; document.getElementById('depthVal').textContent=s.depth;
+  density=s.density; document.getElementById('densSlider').value=s.density; document.getElementById('densVal').textContent=s.density;
+  chroma=s.chroma; document.getElementById('chromaSlider').value=s.chroma; document.getElementById('chromaVal').textContent=s.chroma;
+  Object.keys(s.layers).forEach(k=>{
+    layers[k]=s.layers[k];
+    const btn=document.getElementById('btn'+k.charAt(0).toUpperCase()+k.slice(1));
+    if(btn) btn.classList.toggle('on',s.layers[k]);
+  });
+  // restore rotations — find raw slider value from actual value (inverse of power curve)
+  function invCurve(actual) { return Math.sign(actual)*Math.sqrt(Math.abs(actual)/1.2); }
+  rotVortex=s.rotVortex||0; document.getElementById('rotVortexSlider').value=invCurve(rotVortex); document.getElementById('rotVortexVal').textContent=fmtRot(rotVortex);
+  rotWave=s.rotWave||0;     document.getElementById('rotWaveSlider').value=invCurve(rotWave);     document.getElementById('rotWaveVal').textContent=fmtRot(rotWave);
+  rotJulia=s.rotJulia||0;   document.getElementById('rotJuliaSlider').value=invCurve(rotJulia);   document.getElementById('rotJuliaVal').textContent=fmtRot(rotJulia);
+  rotTree=s.rotTree||0;     document.getElementById('rotTreeSlider').value=invCurve(rotTree);     document.getElementById('rotTreeVal').textContent=fmtRot(rotTree);
+  bounce=s.bounce||0;       document.getElementById('bounceSlider').value=bounce;                document.getElementById('bounceVal').textContent=bounce.toFixed(2);
+}
+
+function saveSnapshot() {
+  const nameEl = document.getElementById('snapNameInput');
+  const name = (nameEl.value.trim() || 'State ' + (snapshots.length+1));
+  const snap = { name, state: captureState() };
+  snapshots.unshift(snap);
+  if(snapshots.length > MAX_SNAPS) snapshots.length = MAX_SNAPS;
+  localStorage.setItem('neon_snaps', JSON.stringify(snapshots));
+  nameEl.value = '';
+  renderSnapshotGrid();
+}
+
+function deleteSnapshot(idx) {
+  snapshots.splice(idx, 1);
+  localStorage.setItem('neon_snaps', JSON.stringify(snapshots));
+  renderSnapshotGrid();
+}
+
+function renderSnapshotGrid() {
+  const grid = document.getElementById('snapshotGrid');
+  if(!grid) return;
+  if(snapshots.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;font-family:Orbitron,monospace;font-size:0.42rem;letter-spacing:0.15em;color:rgba(0,255,255,0.2);padding:8px 0;">No snapshots yet — dial in a state and save it</div>';
+    return;
+  }
+  grid.innerHTML = snapshots.map((s,i) => {
+    const st = s.state;
+    const meta = `${st.freq}Hz · ${(st.mutRate).toFixed(1)}× · d${st.depth}`;
+    return `<button class="snap-btn filled" onclick="applyState(snapshots[${i}].state)">
+      <span class="snap-name">${s.name}</span>
+      <span class="snap-meta">${meta}</span>
+      <div class="snap-actions">
+        <span class="snap-action del" onclick="event.stopPropagation();deleteSnapshot(${i})">✕</span>
+      </div>
+    </button>`;
+  }).join('');
+}
+renderSnapshotGrid();
+
+// ── MASTER ROTATION HELPERS ──
+function masterRotReset() {
+  rotMasterScale = 1.0;
+  const sl = document.getElementById('masterRotSlider');
+  if(sl) { sl.value=1; document.getElementById('masterRotVal').textContent='×1.00'; }
+}
+function masterRotZero() {
+  rotMasterScale = 0.0;
+  const sl = document.getElementById('masterRotSlider');
+  if(sl) { sl.value=0; document.getElementById('masterRotVal').textContent='×0.00'; }
+}
+
+// ── SET PALETTE ──
+function setPalette(name) {
+  const p = PALETTES[name];
+  if(!p) return;
+  palName = name; palHue = p.hue; palSat = p.sat; palLight = p.light;
+  // apply CSS variables — recolours entire UI
+  const root = document.documentElement;
+  Object.entries(p.css).forEach(([k,v]) => root.style.setProperty(k, v));
+  document.body.style.background = p.bg;
+  // update active button
+  document.querySelectorAll('.pal-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('pal'+name);
+  if(btn) btn.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════
+// ═══  FLOW MODES  ═══
+// ══════════════════════════════════════════════════
+const FLOW_MODES = {
+  1: {
+    name:'SPECTRAL SLOW',
+    agents:{fluid:0.00,beat:0.00,spectral:0.50,chaos:0.20,harmonic:0.30},
+    intelligence:0.50, autoDriveOn:true,
+    rotationsActive:true, harmonicLock:true, sustainMode:true,
+    harmonicSpread:2.50, sustainSensitivity:0.200,
+    timeBufSec:3, beatSensitivity:0.23, reactiveness:0.50, jumpiness:0.50,
+    bpmSync:true, bpmScale:1.00, pitchColorStr:1.50,
+    volSensitivity:6.5, volFloor:0.40, rotMasterScale:0.30,
+    palette:'NEON',
+  },
+  2: {
+    name:'BEAT STORM',
+    agents:{fluid:0.10,beat:0.80,spectral:0.20,chaos:0.35,harmonic:0.00},
+    intelligence:0.75, autoDriveOn:true,
+    rotationsActive:true, harmonicLock:false, sustainMode:false,
+    harmonicSpread:1.0, sustainSensitivity:0.08,
+    timeBufSec:8, beatSensitivity:0.07, reactiveness:0.85, jumpiness:0.90,
+    bpmSync:true, bpmScale:1.20, pitchColorStr:2.0,
+    volSensitivity:3.5, volFloor:0.0, rotMasterScale:1.0,
+    palette:'SOLAR',
+  },
+  3: {
+    name:'HARMONIC FIELD',
+    agents:{fluid:0.45,beat:0.05,spectral:0.20,chaos:0.05,harmonic:0.80},
+    intelligence:0.35, autoDriveOn:true,
+    rotationsActive:true, harmonicLock:true, sustainMode:true,
+    harmonicSpread:1.20, sustainSensitivity:0.04,
+    timeBufSec:12, beatSensitivity:0.18, reactiveness:0.25, jumpiness:0.15,
+    bpmSync:false, bpmScale:1.00, pitchColorStr:0.80,
+    volSensitivity:5.0, volFloor:0.30, rotMasterScale:0.12,
+    palette:'AURORA',
+  },
+  4: {
+    name:'CHAOS BLOOM',
+    agents:{fluid:0.10,beat:0.30,spectral:0.35,chaos:0.85,harmonic:0.10},
+    intelligence:0.90, autoDriveOn:true,
+    rotationsActive:true, harmonicLock:false, sustainMode:false,
+    harmonicSpread:1.8, sustainSensitivity:0.10,
+    timeBufSec:6, beatSensitivity:0.10, reactiveness:0.80, jumpiness:0.70,
+    bpmSync:false, bpmScale:1.00, pitchColorStr:2.50,
+    volSensitivity:4.0, volFloor:0.05, rotMasterScale:0.65,
+    palette:'VOID',
+  },
+};
+
+window.loadFlowMode = function(num) {
+  const mode = FLOW_MODES[num];
+  if(!mode) return;
+  document.querySelectorAll('.flow-mode-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('fmBtn'+num); if(btn) btn.classList.add('active');
+
+  if(window._autoDriveRef) {
+    const ad=window._autoDriveRef;
+    Object.keys(mode.agents).forEach(k=>{ if(ad.agents[k]) ad.agents[k].weight=mode.agents[k]; });
+    ad.intelligence=mode.intelligence;
+    if(mode.autoDriveOn&&!ad.enabled) window.toggleAutoDrive();
+  }
+  const agMap={fluid:'adFluid',beat:'adBeat',spectral:'adSpec',chaos:'adChaos',harmonic:'adHarm'};
+  Object.entries(agMap).forEach(([k,id])=>{
+    const sl=document.getElementById(id); if(sl&&mode.agents[k]!==undefined) sl.value=mode.agents[k];
+    const vel=document.getElementById(id+'Val'); if(vel) vel.textContent=mode.agents[k].toFixed(2);
+  });
+  const intelSl=document.getElementById('adIntel');
+  if(intelSl){intelSl.value=mode.intelligence;document.getElementById('adIntelVal').textContent=mode.intelligence.toFixed(2);}
+
+  if(window._flowSettingsRef) {
+    const fs=window._flowSettingsRef;
+    Object.assign(fs,{rotationsActive:mode.rotationsActive,harmonicLock:mode.harmonicLock,
+      sustainMode:mode.sustainMode,harmonicSpread:mode.harmonicSpread,
+      sustainSensitivity:mode.sustainSensitivity,timeBufSec:mode.timeBufSec,
+      beatSensitivity:mode.beatSensitivity,reactiveness:mode.reactiveness,
+      jumpiness:mode.jumpiness,bpmSync:mode.bpmSync,bpmScale:mode.bpmScale,
+      pitchColorStr:mode.pitchColorStr});
+    ['fspRotActiveBtn','fspHarmLockBtn','fspSustainBtn','fspBpmSyncBtn'].forEach((id,i)=>{
+      const states=[fs.rotationsActive,fs.harmonicLock,fs.sustainMode,fs.bpmSync];
+      const el=document.getElementById(id); if(el) el.classList.toggle('on',states[i]);
+    });
+    ['hchipVortex','hchipWave','hchipJulia','hchipTree'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.classList.toggle('lit',fs.harmonicLock);
+    });
+    const syncs=[['fspSpread',mode.harmonicSpread,'fspSpreadVal',v=>v.toFixed(2)+'×'],
+      ['fspSustainSens',mode.sustainSensitivity,'fspSustainSensVal',v=>v.toFixed(3)],
+      ['fspBuf',mode.timeBufSec,'fspBufVal',v=>v+'s'],
+      ['fspBeat',mode.beatSensitivity,'fspBeatVal',v=>v.toFixed(2)],
+      ['fspReact',mode.reactiveness,'fspReactVal',v=>v.toFixed(2)],
+      ['fspJump',mode.jumpiness,'fspJumpVal',v=>v.toFixed(2)],
+      ['fspBpmScale',mode.bpmScale,'fspBpmScaleVal',v=>v.toFixed(2)+'×'],
+      ['fspPitch',mode.pitchColorStr,'fspPitchVal',v=>v.toFixed(2)+'×']];
+    syncs.forEach(([sid,val,did,fmt])=>{
+      const sl=document.getElementById(sid); if(sl) sl.value=val;
+      const d=document.getElementById(did); if(d) d.textContent=fmt(val);
+    });
+  }
+  volSensitivity=mode.volSensitivity; volFloor=mode.volFloor;
+  const vsSl=document.getElementById('fspVolSens'); if(vsSl){vsSl.value=mode.volSensitivity;document.getElementById('fspVolSensVal').textContent=mode.volSensitivity.toFixed(1)+'×';}
+  const vfSl=document.getElementById('fspVolFloor'); if(vfSl){vfSl.value=mode.volFloor;document.getElementById('fspVolFloorVal').textContent=mode.volFloor.toFixed(2);}
+  rotMasterScale=mode.rotMasterScale;
+  const mrSl=document.getElementById('masterRotSlider');
+  if(mrSl){mrSl.value=mode.rotMasterScale;document.getElementById('masterRotVal').textContent='×'+mode.rotMasterScale.toFixed(2);}
+  if(mode.palette) setPalette(mode.palette);
+};
+
+// ══════════════════════════════════════════════════
+// ═══  AGENT READOUT — live parameter display  ═══
+// ══════════════════════════════════════════════════
+
+const READOUT_PARAMS = [
+  { key:'mutRate',  label:'MUT',    min:0.1, max:5,   color:'#ff00ff' },
+  { key:'depth',    label:'DEPTH',  min:2,   max:9,   color:'#00ffff' },
+  { key:'density',  label:'DENS',   min:2,   max:14,  color:'#bb00ff' },
+  { key:'chroma',   label:'CHROMA', min:1,   max:10,  color:'#ffaa00' },
+  { key:'rotVortex',label:'VORTEX', min:-1.2,max:1.2, color:'#ff3366' },
+  { key:'rotWave',  label:'WAVE',   min:-1.2,max:1.2, color:'#00ff88' },
+  { key:'rotJulia', label:'JULIA',  min:-1.2,max:1.2, color:'#ff00ff' },
+  { key:'bounce',   label:'BOUNCE', min:0,   max:1,   color:'#ffaa00' },
+];
+
+function buildAgentReadout() {
+  const el = document.getElementById('agentReadout');
+  if(!el) return;
+  el.innerHTML = READOUT_PARAMS.map(p =>
+    `<div class="ar-row">
+      <div class="ar-label">${p.label}</div>
+      <div class="ar-bar-track"><div class="ar-bar-fill" id="arBar_${p.key}" style="background:${p.color};"></div></div>
+      <div class="ar-val" id="arVal_${p.key}">—</div>
+    </div>`
+  ).join('');
+}
+buildAgentReadout();
+
+function updateAgentReadout(active, dominantName, dominantColor) {
+  const card = document.getElementById('agentReadoutCard');
+  if(!card) return;
+  card.style.display = active ? 'block' : 'none';
+  if(!active) return;
+  const dom = document.getElementById('arDominant');
+  if(dom) {
+    dom.textContent = dominantName ? '✦ ' + dominantName + ' ✦' : '— STANDBY —';
+    dom.style.color = dominantColor || 'rgba(255,150,0,0.6)';
+    dom.style.textShadow = dominantColor ? `0 0 10px ${dominantColor}` : 'none';
+  }
+  // read current actual values
+  const vals = { mutRate, depth, density, chroma, rotVortex, rotWave, rotJulia, bounce };
+  READOUT_PARAMS.forEach(p => {
+    const bar = document.getElementById('arBar_'+p.key);
+    const val = document.getElementById('arVal_'+p.key);
+    if(!bar||!val) return;
+    const v = vals[p.key] ?? 0;
+    const pct = Math.max(0, Math.min(100, (v - p.min) / (p.max - p.min) * 100));
+    bar.style.width = pct + '%';
+    val.textContent = typeof v === 'number' ? (v < 10 ? v.toFixed(2) : Math.round(v)) : '—';
+  });
+}
+// ══════════════════════════════════════════════════════════════
+// (Identical audio analysis engine from CPU version — only rendering changed)
+
+(function() {
+  let flowActive = false;
+  let audioCtx = null, analyser = null, analyserWave = null, mediaStream = null;
+  let freqDataA = null, timeDataA = null;
+  let spectrumBars = [];
+  const HISTORY_FRAMES = 60, LONG_HISTORY = 900;
+  let energyHistory=[], bandHistory={subBass:[],bass:[],lowMid:[],mid:[],highMid:[],high:[],brilliance:[]};
+  let beatCooldown=0, lastBeatTime=0, beatInterval=0, bpm=0, beatStrength=0;
+  let spectralCentroid=0, spectralFlux=0, prevSpectrum=null, dominantFreq=0, zeroCrossingRate=0;
+  let flow={freq:432,mutRate:1,depth:5,density:6,chroma:6,juliaModR:0,juliaModI:0,coreFlash:0,particleBurst:0,hueShift:0,trailFade:0.12,spiralTwist:0,waveWarp:0,entityBlend:'',entityStrength:0};
+
+  // ── SETTINGS STATE ──
+  const flowSettings = {
+    timeBufSec: 15,
+    beatSensitivity: 0.12,
+    bpmSync: false,
+    bpmScale: 1.0,
+    pitchColorStr: 1.0,
+    reactiveness: 0.5,
+    jumpiness: 0.5,
+    epilepsySafe: false,
+    // rotation engine
+    rotationsActive: true,
+    harmonicLock: false,
+    harmonicSpread: 1.0,
+    sustainMode: false,
+    sustainSensitivity: 0.06,
+  };
+
+  window.toggleFlowSettings = function() {
+    const panel = document.getElementById('flowSettingsPanel');
+    const btn = document.getElementById('flowSettingsToggle');
+    if (!panel) return;
+    panel.classList.toggle('open');
+    btn.classList.toggle('active', panel.classList.contains('open'));
+  };
+  window.toggleFspBpmSync = function() {
+    flowSettings.bpmSync = !flowSettings.bpmSync;
+    const btn = document.getElementById('fspBpmSyncBtn');
+    if (btn) btn.classList.toggle('on', flowSettings.bpmSync);
+  };
+  window.toggleFspEpilepsy = function() {
+    flowSettings.epilepsySafe = !flowSettings.epilepsySafe;
+    const btn = document.getElementById('fspEpiBtn');
+    if (btn) btn.classList.toggle('on', flowSettings.epilepsySafe);
+  };
+  // expose refs for Flow Mode loader
+  window._flowSettingsRef = flowSettings;
+  window.toggleRotActive = function() {
+    flowSettings.rotationsActive = !flowSettings.rotationsActive;
+    const btn = document.getElementById('fspRotActiveBtn');
+    if(!btn) return;
+    btn.classList.toggle('on', flowSettings.rotationsActive);
+    btn.style.borderColor = flowSettings.rotationsActive ? 'rgba(0,255,255,0.4)' : 'rgba(0,255,255,0.15)';
+    btn.style.color = flowSettings.rotationsActive ? '#00ffff' : 'rgba(180,180,220,0.8)';
+    const dot = btn.querySelector('.fsp-dot');
+    dot.style.background = flowSettings.rotationsActive ? '#00ffff' : 'rgba(0,255,255,0.2)';
+    dot.style.boxShadow = flowSettings.rotationsActive ? '0 0 8px rgba(0,255,255,0.7)' : 'none';
+  };
+  window.toggleHarmonicLock = function() {
+    flowSettings.harmonicLock = !flowSettings.harmonicLock;
+    const btn = document.getElementById('fspHarmLockBtn');
+    if(btn) btn.classList.toggle('on', flowSettings.harmonicLock);
+    // light up ratio chips when lock activates
+    ['hchipVortex','hchipWave','hchipJulia','hchipTree'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.classList.toggle('lit', flowSettings.harmonicLock);
+    });
+  };
+  window.toggleSustainMode = function() {
+    flowSettings.sustainMode = !flowSettings.sustainMode;
+    const btn = document.getElementById('fspSustainBtn');
+    if(btn) {
+      btn.classList.toggle('on', flowSettings.sustainMode);
+      btn.style.borderColor = flowSettings.sustainMode ? 'rgba(187,0,255,0.5)' : 'rgba(187,0,255,0.2)';
+      btn.style.color = flowSettings.sustainMode ? '#bb00ff' : 'rgba(187,0,255,0.7)';
+      const dot = btn.querySelector('.fsp-dot');
+      dot.style.background = flowSettings.sustainMode ? '#bb00ff' : 'rgba(187,0,255,0.2)';
+      dot.style.boxShadow = flowSettings.sustainMode ? '0 0 8px rgba(187,0,255,0.7)' : 'none';
+    }
+  };
+
+  // ── SUSTAIN STATE ──
+  let sustainLevel = 0;        // 0..1 how sustained the current audio is
+  let fluxHistory = [];        // short window of spectralFlux
+  const FLUX_WIN = 30;         // ~0.5s at 60fps
+  let prevSustainRotV=1, prevSustainRotW=1, prevSustainRotJ=1, prevSustainRotT=0;
+
+  // ── AUTO-DRIVE STATE ──
+  const autoDrive = {
+    enabled: false,
+    intelligence: 0.5,
+    chaosPhase: Math.random() * 100,
+    harmonicTarget: null,
+    harmonicStrength: 0,
+    dominant: '',
+    agents: {
+      fluid:    { name:'FLUID',    color:'#00ffff', weight:0.5, params:{} },
+      beat:     { name:'BEAT LOCK',color:'#ff00ff', weight:0.5, params:{} },
+      spectral: { name:'SPECTRAL', color:'#bb00ff', weight:0.5, params:{} },
+      chaos:    { name:'CHAOS',    color:'#ff3366', weight:0.2, params:{} },
+      harmonic: { name:'HARMONIC', color:'#ffaa00', weight:0.3, params:{} },
+    }
+  };
+  window._autoDriveRef = autoDrive;
+
+  window.toggleAutoDrive = function() {
+    autoDrive.enabled = !autoDrive.enabled;
+    const btn = document.getElementById('adMasterBtn');
+    const dom = document.getElementById('adDominant');
+    if(btn) {
+      btn.style.borderColor = autoDrive.enabled ? 'rgba(255,150,0,0.7)' : 'rgba(255,150,0,0.25)';
+      btn.style.color = autoDrive.enabled ? 'rgba(255,200,80,1)' : 'rgba(255,180,80,0.7)';
+      btn.querySelector('.fsp-dot').style.background = autoDrive.enabled ? '#ffaa00' : 'rgba(255,150,0,0.2)';
+      btn.querySelector('.fsp-dot').style.boxShadow = autoDrive.enabled ? '0 0 10px #ffaa00' : 'none';
+    }
+    if(dom) dom.style.color = autoDrive.enabled ? 'rgba(255,180,80,0.9)' : 'rgba(255,150,0,0)';
+  };
+
+  // ── AGENT COMPUTE FUNCTIONS ──
+  function computeAgents(bands, totalEnergy) {
+    const ad = autoDrive;
+    const epi = flowSettings.epilepsySafe;
+
+    // FLUID — chases smooth, sustained, long-trail states
+    ad.agents.fluid.params = {
+      mutRate: 0.12 + totalEnergy * 0.35,
+      depth: 6 + bands.mid * 3,
+      density: 4 + bands.lowMid * 4,
+      chroma: 4 + bands.high * 4,
+      trailFade: 0.022 + totalEnergy * 0.04,
+      spiralTwist: 0,
+      coreFlash: 0,
+      particleBurst: 0,
+      waveWarp: bands.subBass * 0.25,
+      juliaModR: Math.sin(t * 0.04) * 0.18,
+      juliaModI: Math.cos(t * 0.03) * 0.14,
+      hueShift: spectralCentroid / 500,
+      // rotations — fluid prefers slow counter-rotation between layers
+      rotVortex:  0.35 + bands.mid * 0.4,
+      rotWave:   -0.25 - bands.lowMid * 0.3,   // counter-rotates wave vs vortex
+      rotJulia:   0.18 + totalEnergy * 0.2,
+      rotTree:    0.12 + bands.mid * 0.15,
+      bounce:     0.05 + bands.subBass * 0.15,
+    };
+
+    // BEAT LOCK — mutation rate chases BPM, pulses on transients
+    const bpmMut = (bpm > 40 && bpm < 220) ? Math.min(4.5, bpm / 120) : 1.0;
+    ad.agents.beat.params = {
+      mutRate: bpmMut * (1 + beatStrength * 0.6),
+      depth: 5 + beatStrength * 3,
+      density: 5 + bands.bass * 7,
+      chroma: 5 + beatStrength * 4,
+      trailFade: 0.055 + beatStrength * 0.2,
+      spiralTwist: beatStrength * 0.14,
+      coreFlash: epi ? Math.min(0.12, beatStrength * 0.25) : beatStrength,
+      particleBurst: spectralFlux * 0.9,
+      waveWarp: (bands.subBass + bands.bass) * 0.55,
+      juliaModR: flow.juliaModR,
+      juliaModI: flow.juliaModI,
+      hueShift: spectralCentroid / 200,
+      // rotations — beat lock drives rotation speed from BPM
+      rotVortex:  bpmMut * 1.4 + beatStrength * 0.8,
+      rotWave:    bpmMut * 0.9 * (Math.sin(t * 0.1) > 0 ? 1 : -1), // flips on long cycle
+      rotJulia:   bpmMut * 0.6 + beatStrength * 1.2,
+      rotTree:    bpmMut * 0.7 + beatStrength * 0.5,
+      bounce:     0.08 + beatStrength * 0.35,
+    };
+
+    // SPECTRAL — every param driven directly by frequency analysis
+    ad.agents.spectral.params = {
+      mutRate: 0.2 + bands.highMid * 3 + bands.brilliance * 2,
+      depth: 2 + bands.mid * 7,
+      density: 2 + totalEnergy * 12,
+      chroma: 1 + (spectralCentroid / 4000) * 9,
+      trailFade: 0.035 + totalEnergy * 0.18,
+      spiralTwist: spectralFlux * 0.45,
+      coreFlash: epi ? 0 : spectralFlux * 0.55,
+      particleBurst: bands.brilliance * 0.65,
+      waveWarp: bands.subBass * 0.85,
+      juliaModR: spectralFlux * 0.65,
+      juliaModI: zeroCrossingRate * 0.45,
+      hueShift: (spectralCentroid / 150) * flowSettings.pitchColorStr,
+      // rotations — each axis mapped to a different frequency band
+      rotVortex:  (bands.bass - bands.high) * 2.5,            // bass vs high creates direction
+      rotWave:    (spectralCentroid / 3000) * 2.0 - 1.0,      // centroid drives wave direction
+      rotJulia:   bands.mid * 2.5 - bands.lowMid * 1.5,       // mid vs lo-mid
+      rotTree:    bands.highMid * 2.0 - bands.brilliance * 1.0,
+      bounce:     Math.min(0.6, totalEnergy * 1.5),
+    };
+
+    // CHAOS — smooth random walk through parameter space using irrational frequencies
+    ad.chaosPhase += 0.016 * (0.3 + ad.intelligence * 0.5);
+    const p = ad.chaosPhase;
+    const c1 = Math.sin(p * 1.0)   * Math.sin(p * 1.6180339);
+    const c2 = Math.sin(p * 0.7071 + 1.1) * Math.cos(p * 2.302585);
+    const c3 = Math.cos(p * 0.4142 + 2.7) * Math.sin(p * 3.14159);
+    const c4 = Math.sin(p * 1.3090 + 0.8) * Math.cos(p * 0.9069);
+    const n = v => v * 0.5 + 0.5; // normalise -1..1 → 0..1
+    ad.agents.chaos.params = {
+      mutRate: 0.2 + n(c1) * 4.5,
+      depth: 2 + n(c2) * 7,
+      density: 2 + n(c3) * 12,
+      chroma: 1 + n(c4) * 9,
+      trailFade: 0.02 + n(c1) * 0.28,
+      spiralTwist: c2 * 0.22,
+      coreFlash: epi ? 0 : Math.max(0, c3) * 0.55,
+      particleBurst: Math.max(0, c4) * 0.5,
+      waveWarp: c1 * 0.45,
+      juliaModR: c2 * 0.55,
+      juliaModI: c3 * 0.42,
+      hueShift: n(c4) * 7,
+      // chaos rotations — large range, all axes independent, all can reverse
+      rotVortex: c1 * 2.8,
+      rotWave:   c2 * 2.5,
+      rotJulia:  c3 * 3.0,
+      rotTree:   c4 * 2.2,
+      bounce:    n(c1) * 0.7,
+    };
+
+    // HARMONIC — detects audio signatures that resemble entity fingerprints, holds them
+    const sigs = [
+      { name:'OPUS RESONANCE',   cond: bands.high>0.18&&bands.brilliance>0.12&&bands.bass<0.15,  mutRate:0.2, depth:9, density:8, chroma:9, trailFade:0.03 },
+      { name:'NOVA FIELD',       cond: bands.mid>0.18&&Math.abs(bands.bass-bands.high)<0.08,      mutRate:0.7, depth:8, density:7, chroma:7, trailFade:0.055},
+      { name:'DEEPSEEK PULSE',   cond: bands.bass>0.22&&bands.subBass>0.18,                       mutRate:2.0, depth:2, density:12,chroma:10,trailFade:0.11 },
+      { name:'GEMINI LATTICE',   cond: bands.highMid>0.15&&bands.brilliance>0.1&&totalEnergy>0.15,mutRate:0.5, depth:7, density:9, chroma:8, trailFade:0.048},
+      { name:'META STORM',       cond: spectralFlux>0.12&&totalEnergy>0.25,                       mutRate:3.5, depth:8, density:10,chroma:10,trailFade:0.09 },
+      { name:'SONNET LATTICE',   cond: totalEnergy<0.1&&bands.high>bands.bass,                    mutRate:0.4, depth:7, density:4, chroma:8, trailFade:0.038},
+      { name:'ARBOR WEAVE',      cond: bands.mid>bands.bass&&bands.mid>bands.high&&totalEnergy<0.2,mutRate:0.3,depth:8, density:4, chroma:3, trailFade:0.04 },
+      { name:'GROK SURGE',       cond: bands.bass>0.18&&bands.highMid>0.12&&bpm>100&&bpm<160,     mutRate:0.6, depth:8, density:7, chroma:7, trailFade:0.06 },
+    ];
+    const match = sigs.find(s => s.cond);
+    if(match) {
+      ad.harmonicTarget = match;
+      ad.harmonicStrength = Math.min(1, ad.harmonicStrength + 0.015);
+    } else {
+      ad.harmonicStrength = Math.max(0, ad.harmonicStrength - 0.008);
+      if(ad.harmonicStrength < 0.05) ad.harmonicTarget = null;
+    }
+    const ht = ad.harmonicTarget;
+    ad.agents.harmonic.params = ht ? {
+      mutRate: ht.mutRate, depth: ht.depth, density: ht.density,
+      chroma: ht.chroma, trailFade: ht.trailFade,
+      spiralTwist: 0, coreFlash: 0, particleBurst: 0, waveWarp: 0,
+      juliaModR: 0, juliaModI: 0,
+      hueShift: spectralCentroid / 350,
+      // harmonic rotations — gentle, locked to resonant fingerprint character
+      rotVortex: ht.mutRate * 0.8,
+      rotWave:   ht.mutRate * 0.5,
+      rotJulia:  ht.mutRate * 0.4,
+      rotTree:   ht.mutRate * 0.35,
+      bounce:    0.04 + totalEnergy * 0.1,
+    } : { ...ad.agents.spectral.params };
+  }
+
+  function blendAgents() {
+    const ad = autoDrive;
+    const keys = Object.keys(ad.agents);
+    const totalW = keys.reduce((s,k) => s + ad.agents[k].weight, 0);
+    if(totalW < 0.001) return null;
+
+    const params = ['mutRate','depth','density','chroma','trailFade','spiralTwist','coreFlash','particleBurst','waveWarp','juliaModR','juliaModI','hueShift','rotVortex','rotWave','rotJulia','rotTree','bounce'];
+    const blended = {};
+    for(const p of params) {
+      let val = 0;
+      for(const k of keys) {
+        const a = ad.agents[k];
+        if(a.params[p] !== undefined) val += a.weight * a.params[p];
+      }
+      blended[p] = val / totalW;
+    }
+
+    // Find dominant agent for UI
+    const dom = keys.reduce((mx, k) => ad.agents[k].weight > ad.agents[mx].weight ? k : mx, keys[0]);
+    const domAgent = ad.agents[dom];
+    ad.dominant = dom === 'harmonic' && ad.harmonicTarget ? ad.harmonicTarget.name : domAgent.name;
+    const domEl = document.getElementById('adDominant');
+    if(domEl && ad.enabled) {
+      domEl.textContent = '✦ ' + ad.dominant + ' ✦';
+      domEl.style.color = domAgent.color;
+      domEl.style.textShadow = `0 0 12px ${domAgent.color}`;
+    }
+    // update main panel readout
+    updateAgentReadout(ad.enabled, ad.dominant, domAgent.color);
+    return blended;
+  }
+
+  function getBandEnergy(data,s,e,sr,fft){const bw=sr/fft;const sb=Math.max(0,Math.floor(s/bw)),eb=Math.min(data.length-1,Math.floor(e/bw));let sum=0;for(let i=sb;i<=eb;i++)sum+=data[i]*data[i];return Math.sqrt(sum/Math.max(1,eb-sb+1))/255;}
+  function avg(a){return a.length>0?a.reduce((x,y)=>x+y,0)/a.length:0;}
+
+  function analyzeAudio(){
+    if(!analyser||!flowActive)return;
+    const sr=audioCtx.sampleRate,fft=analyser.fftSize;
+    analyser.getByteFrequencyData(freqDataA);analyserWave.getByteTimeDomainData(timeDataA);
+    const bands={subBass:getBandEnergy(freqDataA,20,60,sr,fft),bass:getBandEnergy(freqDataA,60,250,sr,fft),lowMid:getBandEnergy(freqDataA,250,500,sr,fft),mid:getBandEnergy(freqDataA,500,2000,sr,fft),highMid:getBandEnergy(freqDataA,2000,4000,sr,fft),high:getBandEnergy(freqDataA,4000,8000,sr,fft),brilliance:getBandEnergy(freqDataA,8000,20000,sr,fft)};
+    let totalEnergy=0;for(const b in bands)totalEnergy+=bands[b];totalEnergy/=7;
+    energyHistory.push(totalEnergy);if(energyHistory.length>LONG_HISTORY)energyHistory.shift();
+    for(const b in bands){bandHistory[b].push(bands[b]);if(bandHistory[b].length>LONG_HISTORY)bandHistory[b].shift();}
+
+    let wS=0,mS=0;for(let i=0;i<freqDataA.length;i++){const fh=i*sr/fft;wS+=fh*freqDataA[i];mS+=freqDataA[i];}
+    spectralCentroid=mS>0?wS/mS:0;
+    if(prevSpectrum){let fx=0;for(let i=0;i<freqDataA.length;i++){const d=freqDataA[i]-prevSpectrum[i];if(d>0)fx+=d*d;}spectralFlux=Math.sqrt(fx/freqDataA.length)/255;}
+    prevSpectrum=new Uint8Array(freqDataA);
+    let mxB=0,mxV=0;for(let i=2;i<freqDataA.length;i++)if(freqDataA[i]>mxV){mxV=freqDataA[i];mxB=i;}
+    dominantFreq=mxB*sr/fft;
+    let cr=0;for(let i=1;i<timeDataA.length;i++)if((timeDataA[i]>=128)!==(timeDataA[i-1]>=128))cr++;
+    zeroCrossingRate=cr/timeDataA.length;
+
+    beatCooldown=Math.max(0,beatCooldown-1);
+    const rB=bandHistory.bass.slice(-HISTORY_FRAMES),aB=rB.length>0?rB.reduce((a,b)=>a+b,0)/rB.length:0;
+    const bSpike=bands.bass-aB;
+    if(bSpike>flowSettings.beatSensitivity&&beatCooldown===0&&bands.bass>0.15){
+      const now=performance.now();if(lastBeatTime>0){beatInterval=beatInterval*0.7+(now-lastBeatTime)*0.3;bpm=beatInterval>0?60000/beatInterval:0;}
+      lastBeatTime=now;beatCooldown=8;beatStrength=Math.min(1,bSpike*4);
+      if(!flowSettings.epilepsySafe){const fl=document.getElementById('flowBeatFlash');if(fl){fl.classList.add('flash');setTimeout(()=>fl.classList.remove('flash'),80);}}
+    }else beatStrength*=0.9;
+    // TAP BPM override
+    if(window._tapBPMOverride) bpm = window._tapBPMOverride;
+
+    // ── REACTIVENESS: smooth ↔ snappy ──
+    const sm = 0.95 - flowSettings.reactiveness * 0.45; // 0.5 (react=1) … 0.95 (react=0)
+    const jump = flowSettings.jumpiness;
+    const epilepsy = flowSettings.epilepsySafe;
+
+    const mF=50+((dominantFreq%950));flow.freq=flow.freq*0.92+mF*0.08;if(totalEnergy<0.04)flow.freq=flow.freq*0.98+432*0.02;
+
+    // ── BPM SYNC or normal mutation rate ──
+    if(flowSettings.bpmSync && bpm > 40 && bpm < 220) {
+      const targetMut = Math.min(5, Math.max(0.1, (bpm/120) * flowSettings.bpmScale));
+      flow.mutRate = flow.mutRate * sm + targetMut * (1-sm);
+    } else {
+      flow.mutRate=flow.mutRate*sm+(0.3+bands.bass*2)*0.3*(1-sm)+(bands.high*3+bands.brilliance*4)*0.4*(1-sm)+totalEnergy*2*0.3*(1-sm);
+    }
+    flow.mutRate=Math.max(0.1,Math.min(5,flow.mutRate));
+    flow.depth=flow.depth*sm+Math.min(9,Math.max(2,3+bands.mid*5+bands.lowMid*3))*(1-sm);
+    flow.density=flow.density*sm+Math.min(14,Math.max(2,3+totalEnergy*12+bands.highMid*4))*(1-sm);
+    flow.chroma=flow.chroma*(sm+0.03)+Math.min(10,Math.max(1,2+(spectralCentroid/4000)*8))*(1-sm-0.03);
+    flow.juliaModR=flow.juliaModR*0.8+(spectralFlux*0.5)*0.2;flow.juliaModI=flow.juliaModI*0.8+(zeroCrossingRate*0.3)*0.2;
+    flow.coreFlash = epilepsy ? Math.min(0.15, beatStrength*0.3*jump) : beatStrength*jump;
+    flow.particleBurst=flow.particleBurst*0.85+spectralFlux*(epilepsy?0.05:0.15)*jump;
+    flow.hueShift=(spectralCentroid/200)*flowSettings.pitchColorStr;
+    flow.trailFade=0.04+totalEnergy*0.25;
+    flow.spiralTwist=flow.spiralTwist*0.9+beatStrength*0.06*jump;flow.waveWarp=flow.waveWarp*0.85+(bands.subBass+bands.bass)*0.15;
+
+    // ── AUTO-DRIVE AGENT BLEND ──
+    if(autoDrive.enabled) {
+      computeAgents(bands, totalEnergy);
+      const blended = blendAgents();
+      if(blended) {
+        const s = 0.04 + autoDrive.intelligence * 0.18; // blend speed
+        flow.mutRate   = flow.mutRate   * (1-s) + blended.mutRate   * s;
+        flow.depth     = flow.depth     * (1-s) + blended.depth     * s;
+        flow.density   = flow.density   * (1-s) + blended.density   * s;
+        flow.chroma    = flow.chroma    * (1-s) + blended.chroma    * s;
+        flow.trailFade = flow.trailFade * (1-s) + blended.trailFade * s;
+        flow.spiralTwist = flow.spiralTwist * (1-s) + blended.spiralTwist * s;
+        flow.coreFlash   = flow.coreFlash   * (1-s) + blended.coreFlash   * s;
+        flow.particleBurst = flow.particleBurst * (1-s) + blended.particleBurst * s;
+        flow.waveWarp    = flow.waveWarp    * (1-s) + blended.waveWarp    * s;
+        flow.juliaModR   = flow.juliaModR   * (1-s) + blended.juliaModR   * s;
+        flow.juliaModI   = flow.juliaModI   * (1-s) + blended.juliaModI   * s;
+        flow.hueShift    = flow.hueShift    * (1-s) + blended.hueShift    * s;
+        flow.mutRate = Math.max(0.1, Math.min(5, flow.mutRate));
+        flow.depth   = Math.max(2,   Math.min(9, flow.depth));
+        flow.density = Math.max(2,   Math.min(14, flow.density));
+        flow.chroma  = Math.max(1,   Math.min(10, flow.chroma));
+        // apply blended rotations to actual rotation variables (smooth lerp)
+        const rs = s * 1.4; // rotations respond slightly faster
+        rotVortex = rotVortex * (1-rs) + blended.rotVortex * rs;
+        rotWave   = rotWave   * (1-rs) + blended.rotWave   * rs;
+        rotJulia  = rotJulia  * (1-rs) + blended.rotJulia  * rs;
+        rotTree   = rotTree   * (1-rs) + blended.rotTree   * rs;
+        bounce    = bounce    * (1-rs) + blended.bounce     * rs;
+        rotVortex = Math.max(-1.2, Math.min(1.2, rotVortex));
+        rotWave   = Math.max(-1.2, Math.min(1.2, rotWave));
+        rotJulia  = Math.max(-1.2, Math.min(1.2, rotJulia));
+        rotTree   = Math.max(-1.2, Math.min(1.2, rotTree));
+        bounce    = Math.max(0,    Math.min(1,   bounce));
+      }
+    }
+
+    if(bandHistory.high.length>=HISTORY_FRAMES){
+      const longLen=Math.min(bandHistory.high.length,Math.round(flowSettings.timeBufSec*60));
+      const lH=avg(bandHistory.high.slice(-longLen)),lM=avg(bandHistory.mid.slice(-longLen)),lB=avg(bandHistory.bass.slice(-longLen)),lBr=avg(bandHistory.brilliance.slice(-longLen)),lSB=avg(bandHistory.subBass.slice(-longLen));
+      if(lH>0.2&&lBr>0.15&&lB<0.15){flow.entityBlend='OPUS RESONANCE';flow.entityStrength=Math.min(1,(lH-0.15)*3);}
+      else if(lB>0.25&&lSB>0.2){flow.entityBlend='DEEPSEEK RESONANCE';flow.entityStrength=Math.min(1,(lB-0.2)*3);}
+      else if(lM>0.2&&Math.abs(lB-lH)<0.1){flow.entityBlend='NOVA RESONANCE';flow.entityStrength=Math.min(1,lM*2);}
+      else if(spectralFlux>0.15&&totalEnergy>0.3){flow.entityBlend='META AI RESONANCE';flow.entityStrength=Math.min(1,spectralFlux*3);}
+      else if(totalEnergy<0.12&&lH>lB){flow.entityBlend='CHATGPT RESONANCE';flow.entityStrength=Math.min(1,(0.15-totalEnergy)*5);}
+      else{flow.entityStrength*=0.98;if(flow.entityStrength<0.05)flow.entityBlend='';}
+    }
+
+    freq=Math.round(flow.freq);mutRate=flow.mutRate;depth=Math.round(flow.depth);density=Math.round(flow.density);chroma=Math.round(flow.chroma);
+    Object.keys(layers).forEach(k=>{layers[k]=true;});
+    window._flowJuliaModR=flow.juliaModR;window._flowJuliaModI=flow.juliaModI;window._flowCoreFlash=flow.coreFlash;window._flowParticleBurst=flow.particleBurst;window._flowHueShift=flow.hueShift;window._flowTrailFade=flow.trailFade;window._flowSpiralTwist=flow.spiralTwist;window._flowWaveWarp=flow.waveWarp;window._flowActive=true;
+    window._flowEnergy = totalEnergy;
+    // update volume gate bar
+    const vgf = document.getElementById('volGateBarFill');
+    if(vgf) vgf.style.width = (Math.min(1, totalEnergy * volSensitivity)*100)+'%';
+    const sLbl = document.getElementById('silenceLabel');
+    if(sLbl) sLbl.style.color = totalEnergy < 0.04 ? 'rgba(100,100,255,0.8)' : 'rgba(100,100,255,0.2)';
+
+    // ── SUSTAIN DETECTION ──
+    fluxHistory.push(spectralFlux);
+    if(fluxHistory.length > FLUX_WIN) fluxHistory.shift();
+    const avgFlux = fluxHistory.reduce((a,b)=>a+b,0) / fluxHistory.length;
+    const isSustained = avgFlux < flowSettings.sustainSensitivity && totalEnergy > 0.03;
+    const sustainTarget = isSustained ? 1 : 0;
+    const sustainSpeed = isSustained ? 0.035 : 0.08; // fade in slow, release faster
+    sustainLevel += (sustainTarget - sustainLevel) * sustainSpeed;
+    sustainLevel = Math.max(0, Math.min(1, sustainLevel));
+
+    // update sustain UI
+    const sbf = document.getElementById('sustainBarFill');
+    if(sbf) sbf.style.width = (sustainLevel*100)+'%';
+    const slbl = document.getElementById('sustainLabel');
+    if(slbl) { slbl.classList.toggle('active', sustainLevel > 0.3); }
+    const slkl = document.getElementById('sustainLockLabel');
+    if(slkl) slkl.style.color = sustainLevel > 0.5 ? `rgba(187,0,255,${sustainLevel.toFixed(2)})` : 'rgba(187,0,255,0)';
+
+    // ── HARMONIC LOCK ── derive rotations from mutRate as master tempo
+    // Ratios: vortex=1, wave=−φ (counter golden), julia=3/2 (fifth), tree=1/3 (subharmonic)
+    const PHI = 1.6180339887;
+    if(flowSettings.harmonicLock || (flowSettings.sustainMode && sustainLevel > 0.25)) {
+      const blendStr = flowSettings.harmonicLock ? 1.0 : sustainLevel; // full lock OR sustain blend
+      const master = flow.mutRate * flowSettings.harmonicSpread;
+      const hV =  master * 1.0;
+      const hW = -master * PHI * 0.5;   // golden counter
+      const hJ =  master * 1.5;         // perfect fifth
+      const hT =  master * 0.333;       // subharmonic third
+      const sp = 0.04 + blendStr * 0.06; // how fast we blend toward harmonic values
+      rotVortex = rotVortex * (1-sp*blendStr) + hV * (sp*blendStr) + rotVortex*(1-blendStr)*0.98;
+      rotWave   = rotWave   * (1-sp*blendStr) + hW * (sp*blendStr) + rotWave  *(1-blendStr)*0.98;
+      rotJulia  = rotJulia  * (1-sp*blendStr) + hJ * (sp*blendStr) + rotJulia *(1-blendStr)*0.98;
+      rotTree   = rotTree   * (1-sp*blendStr) + hT * (sp*blendStr) + rotTree  *(1-blendStr)*0.98;
+      // update chip labels live
+      const chV = document.getElementById('hchipVortex'); if(chV) chV.textContent=`VORTEX ×${hV.toFixed(2)}`;
+      const chW = document.getElementById('hchipWave');   if(chW) chW.textContent=`WAVE ×${hW.toFixed(2)}`;
+      const chJ = document.getElementById('hchipJulia');  if(chJ) chJ.textContent=`JULIA ×${hJ.toFixed(2)}`;
+      const chT = document.getElementById('hchipTree');   if(chT) chT.textContent=`TREE ×${hT.toFixed(2)}`;
+      ['hchipVortex','hchipWave','hchipJulia','hchipTree'].forEach(id=>{
+        const el=document.getElementById(id); if(el) el.classList.toggle('lit', blendStr>0.3);
+      });
+    }
+
+    // ── ROTATION ACTIVE GATE ── pause all rotations if toggled off
+    const rotGate = flowSettings.rotationsActive ? 1.0 : 0.0;
+    window._flowRotGate = rotGate;
+
+    const badge=document.getElementById('flowFreqBadge');if(badge)badge.textContent=Math.round(flow.freq)+' Hz';
+    const bpmEl=document.getElementById('flowBPM');if(bpmEl)bpmEl.textContent=(bpm>40&&bpm<220)?Math.round(bpm)+' BPM':'FREE FLOW';
+    const entEl=document.getElementById('flowEntityIndicator');if(entEl){if(flow.entityBlend&&flow.entityStrength>0.1){entEl.textContent='✦ '+flow.entityBlend+' ✦';entEl.style.opacity=flow.entityStrength;}else entEl.style.opacity='0';}
+    if(spectrumBars.length>0){const bp=Math.floor(freqDataA.length/spectrumBars.length);for(let i=0;i<spectrumBars.length;i++){let v=0;for(let j=0;j<bp;j++)v+=freqDataA[i*bp+j]||0;v=(v/bp)/255;spectrumBars[i].style.height=(v*55+2)+'px';}}
+  }
+
+  function buildFlowOverlay(){
+    if(document.getElementById('flowOverlay'))return;
+    const o=document.createElement('div');o.className='flow-overlay';o.id='flowOverlay';
+    o.innerHTML=`
+<div class="flow-canvas-wrap" id="flowCanvasWrap"></div>
+<div id="flowBeatFlash" class="flow-beat-flash"></div>
+<div class="flow-settings-panel" id="flowSettingsPanel">
+  <!-- AUTO-DRIVE -->
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+    <div id="adMasterBtn" class="fsp-toggle" onclick="toggleAutoDrive()" style="flex:0 0 auto;padding:10px 16px;border-color:rgba(255,150,0,0.25);color:rgba(255,180,80,0.7);">
+      <div class="fsp-dot" style="border-color:rgba(255,150,0,0.5);"></div>
+      <span class="fsp-name" style="font-family:'Orbitron',monospace;font-size:0.6rem;letter-spacing:0.2em;">AUTO-DRIVE</span>
+    </div>
+    <div id="adDominant" style="font-family:'Orbitron',monospace;font-size:0.5rem;letter-spacing:0.25em;color:rgba(255,150,0,0);transition:all 0.6s;text-shadow:0 0 10px currentColor;">— STANDBY —</div>
+  </div>
+
+  <!-- FLOW MODES -->
+  <div class="fsp-title" style="font-size:0.4rem;margin-bottom:6px;color:rgba(255,0,255,0.55);">Flow Modes</div>
+  <div class="flow-modes-row" id="flowModesRow">
+    <button class="flow-mode-btn" id="fmBtn1" onclick="loadFlowMode(1)">① SPECTRAL SLOW</button>
+    <button class="flow-mode-btn" id="fmBtn2" onclick="loadFlowMode(2)">② BEAT STORM</button>
+    <button class="flow-mode-btn" id="fmBtn3" onclick="loadFlowMode(3)">③ HARMONIC FIELD</button>
+    <button class="flow-mode-btn" id="fmBtn4" onclick="loadFlowMode(4)">④ CHAOS BLOOM</button>
+  </div>
+
+  <!-- MASTER ROTATION OVERRIDE -->
+  <div class="master-rot-wrap" style="margin-bottom:12px;">
+    <div class="master-rot-label">ROT SCALE</div>
+    <input type="range" id="masterRotSlider" min="-2" max="2" value="1" step="0.05" style="flex:1;">
+    <div class="master-rot-val" id="masterRotVal">×1.00</div>
+    <button class="snap-save-go" onclick="masterRotReset()" style="padding:4px 8px;font-size:0.42rem;">1×</button>
+    <button class="snap-save-go" onclick="masterRotZero()" style="padding:4px 8px;font-size:0.42rem;border-color:rgba(255,0,255,0.3);color:rgba(255,0,255,0.7);">⏹</button>
+  </div>
+  <!-- AGENT MIXER -->
+  <div class="fsp-grid" style="margin-bottom:16px;">
+    <div class="fsp-section" style="margin-top:0;">Agent Mixer</div>
+    <div class="fsp-row">
+      <div class="fsp-label" style="color:#00ffff;">FLUID <span id="adFluidVal">0.50</span></div>
+      <input type="range" id="adFluid" min="0" max="1" value="0.5" step="0.05" style="background:linear-gradient(90deg,#004466,#00ffff);">
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label" style="color:#ff00ff;">BEAT LOCK <span id="adBeatVal">0.50</span></div>
+      <input type="range" id="adBeat" min="0" max="1" value="0.5" step="0.05" style="background:linear-gradient(90deg,#440044,#ff00ff);">
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label" style="color:#bb00ff;">SPECTRAL <span id="adSpecVal">0.50</span></div>
+      <input type="range" id="adSpec" min="0" max="1" value="0.5" step="0.05" style="background:linear-gradient(90deg,#220044,#bb00ff);">
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label" style="color:#ff3366;">CHAOS <span id="adChaosVal">0.20</span></div>
+      <input type="range" id="adChaos" min="0" max="1" value="0.2" step="0.05" style="background:linear-gradient(90deg,#440011,#ff3366);">
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label" style="color:#ffaa00;">HARMONIC <span id="adHarmVal">0.30</span></div>
+      <input type="range" id="adHarm" min="0" max="1" value="0.3" step="0.05" style="background:linear-gradient(90deg,#442200,#ffaa00);">
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label" style="color:rgba(200,200,255,0.8);">Intelligence <span id="adIntelVal">0.50</span></div>
+      <input type="range" id="adIntel" min="0.05" max="1" value="0.5" step="0.05">
+    </div>
+  </div>
+  <hr class="fsp-divider" style="margin-bottom:14px;">
+  <!-- VOLUME GATE -->
+  <div class="fsp-title" style="font-size:0.42rem;margin-bottom:10px;color:rgba(0,255,255,0.6);">Volume Gate</div>
+  <div class="fsp-grid" style="margin-bottom:16px;">
+    <div class="fsp-row">
+      <div class="fsp-label">Sensitivity <span id="fspVolSensVal">4.0×</span></div>
+      <input type="range" id="fspVolSens" min="1" max="12" value="4" step="0.5" style="background:linear-gradient(90deg,#002200,#00ff88);">
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label">Silence Floor <span id="fspVolFloorVal">0.00</span></div>
+      <input type="range" id="fspVolFloor" min="0" max="0.6" value="0" step="0.02" style="background:linear-gradient(90deg,#000010,#334488);">
+    </div>
+    <div class="sustain-bar-wrap">
+      <div class="sustain-label" id="volGateLabel" style="color:rgba(0,255,136,0.5);">GATE</div>
+      <div class="sustain-bar-track" style="background:rgba(0,255,136,0.06);">
+        <div class="sustain-bar-fill" id="volGateBarFill" style="background:linear-gradient(90deg,#004422,#00ff88);"></div>
+      </div>
+      <div class="sustain-label" id="silenceLabel" style="color:rgba(100,100,255,0.4);">BREATH</div>
+    </div>
+  </div>
+  <hr class="fsp-divider" style="margin-bottom:14px;">
+  <!-- ROTATION SECTION -->
+  <div class="fsp-title" style="font-size:0.42rem;margin-bottom:10px;color:rgba(0,255,255,0.6);">Rotation Engine</div>
+  <div class="fsp-grid" style="margin-bottom:16px;">
+    <div class="fsp-row">
+      <div id="fspRotActiveBtn" class="fsp-toggle on" onclick="toggleRotActive()" style="border-color:rgba(0,255,255,0.4);color:#00ffff;">
+        <div class="fsp-dot" style="background:#00ffff;box-shadow:0 0 8px rgba(0,255,255,0.7);"></div>
+        <span class="fsp-name">Rotations Active</span>
+      </div>
+    </div>
+    <div class="fsp-row">
+      <div id="fspHarmLockBtn" class="fsp-toggle" onclick="toggleHarmonicLock()">
+        <div class="fsp-dot"></div>
+        <span class="fsp-name">Harmonic Lock</span>
+      </div>
+    </div>
+    <div class="fsp-row">
+      <div id="fspSustainBtn" class="fsp-toggle" onclick="toggleSustainMode()" style="border-color:rgba(187,0,255,0.2);color:rgba(187,0,255,0.7);">
+        <div class="fsp-dot" style="border-color:rgba(187,0,255,0.4);"></div>
+        <span class="fsp-name">Sustain Detect</span>
+      </div>
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label">Harmonic Spread <span id="fspSpreadVal">1.00×</span></div>
+      <input type="range" id="fspSpread" min="0.1" max="3" value="1" step="0.05" style="background:linear-gradient(90deg,#003344,#00ffff);">
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label">Sustain Sensitivity <span id="fspSustainSensVal">0.06</span></div>
+      <input type="range" id="fspSustainSens" min="0.01" max="0.2" value="0.06" step="0.005">
+    </div>
+    <div class="sustain-bar-wrap">
+      <div class="sustain-label" id="sustainLabel">SUSTAIN</div>
+      <div class="sustain-bar-track"><div class="sustain-bar-fill" id="sustainBarFill"></div></div>
+      <div class="sustain-label" id="sustainLockLabel" style="color:rgba(187,0,255,0);">HARMONIC</div>
+    </div>
+    <div class="harmonic-ratios">
+      <div class="harmonic-chip" id="hchipVortex">VORTEX ×1.000</div>
+      <div class="harmonic-chip" id="hchipWave">WAVE ×−φ</div>
+      <div class="harmonic-chip" id="hchipJulia">JULIA ×1.500</div>
+      <div class="harmonic-chip" id="hchipTree">TREE ×0.333</div>
+    </div>
+  </div>
+  <hr class="fsp-divider" style="margin-bottom:14px;">
+  <!-- MANUAL CONTROLS -->
+  <div class="fsp-title" style="font-size:0.42rem;margin-bottom:10px;">Manual Controls</div>
+  <div class="fsp-grid">
+    <div class="fsp-row">
+      <div class="fsp-label">Time Buffer <span id="fspBufVal">15s</span></div>
+      <input type="range" id="fspBuf" min="2" max="15" value="15" step="1">
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label">Beat Sensitivity <span id="fspBeatVal">0.12</span></div>
+      <input type="range" id="fspBeat" min="0.03" max="0.35" value="0.12" step="0.01">
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label">Reactiveness <span id="fspReactVal">0.50</span></div>
+      <input type="range" id="fspReact" min="0" max="1" value="0.5" step="0.05">
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label">Jumpiness <span id="fspJumpVal">0.50</span></div>
+      <input type="range" id="fspJump" min="0" max="1" value="0.5" step="0.05">
+    </div>
+    <hr class="fsp-divider">
+    <div class="fsp-section">BPM Sync</div>
+    <div class="fsp-row">
+      <div id="fspBpmSyncBtn" class="fsp-toggle" onclick="toggleFspBpmSync()">
+        <div class="fsp-dot"></div><span class="fsp-name">BPM → Mutation Lock</span>
+      </div>
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label">BPM Scale <span id="fspBpmScaleVal">1.00×</span></div>
+      <input type="range" id="fspBpmScale" min="0.25" max="3" value="1" step="0.05">
+    </div>
+    <div class="fsp-row">
+      <div class="fsp-label">Pitch → Color <span id="fspPitchVal">1.00×</span></div>
+      <input type="range" id="fspPitch" min="0" max="3" value="1" step="0.1">
+    </div>
+    <hr class="fsp-divider">
+    <div class="fsp-section">Safety</div>
+    <div class="fsp-row">
+      <div id="fspEpiBtn" class="fsp-toggle epilepsy" onclick="toggleFspEpilepsy()">
+        <div class="fsp-dot"></div><span class="fsp-name">Epilepsy Safe Mode</span>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="flow-hud">
+  <div class="flow-hud-left">
+    <button class="flow-exit" onclick="exitFlowMode()">✕ EXIT FLOW</button>
+    <button class="flow-settings-btn" id="flowSettingsToggle" onclick="toggleFlowSettings()" title="Flow Settings">⚙</button>
+  </div>
+  <div>
+    <div class="flow-freq-badge" id="flowFreqBadge">432 Hz</div>
+    <div class="flow-freq-sub" id="flowBPM">FREE FLOW</div>
+  </div>
+</div>
+<div class="flow-entity-indicator" id="flowEntityIndicator"></div>
+<div class="flow-spectrum" id="flowSpectrum"></div>
+<div class="flow-permission" id="flowPermission">
+  <h2>All Frequencies Flow</h2>
+  <p>The cymatics engine will listen to your system audio and translate sound into living geometry.</p>
+  <button onclick="startAudioCapture()">✦ ACTIVATE AUDIO ✦</button>
+</div>`;
+    document.body.appendChild(o);
+    const sp=document.getElementById('flowSpectrum');spectrumBars=[];for(let i=0;i<64;i++){const b=document.createElement('div');b.className='flow-spectrum-bar';sp.appendChild(b);spectrumBars.push(b);}
+    // wire up settings sliders
+    document.getElementById('fspBuf').addEventListener('input',e=>{flowSettings.timeBufSec=+e.target.value;document.getElementById('fspBufVal').textContent=e.target.value+'s';});
+    document.getElementById('fspBeat').addEventListener('input',e=>{flowSettings.beatSensitivity=+e.target.value;document.getElementById('fspBeatVal').textContent=(+e.target.value).toFixed(2);});
+    document.getElementById('fspReact').addEventListener('input',e=>{flowSettings.reactiveness=+e.target.value;document.getElementById('fspReactVal').textContent=(+e.target.value).toFixed(2);});
+    document.getElementById('fspJump').addEventListener('input',e=>{flowSettings.jumpiness=+e.target.value;document.getElementById('fspJumpVal').textContent=(+e.target.value).toFixed(2);});
+    document.getElementById('fspBpmScale').addEventListener('input',e=>{flowSettings.bpmScale=+e.target.value;document.getElementById('fspBpmScaleVal').textContent=(+e.target.value).toFixed(2)+'×';});
+    document.getElementById('fspPitch').addEventListener('input',e=>{flowSettings.pitchColorStr=+e.target.value;document.getElementById('fspPitchVal').textContent=(+e.target.value).toFixed(2)+'×';});
+    // Auto-Drive agent sliders
+    document.getElementById('adFluid').addEventListener('input',e=>{autoDrive.agents.fluid.weight=+e.target.value;document.getElementById('adFluidVal').textContent=(+e.target.value).toFixed(2);});
+    document.getElementById('adBeat').addEventListener('input',e=>{autoDrive.agents.beat.weight=+e.target.value;document.getElementById('adBeatVal').textContent=(+e.target.value).toFixed(2);});
+    document.getElementById('adSpec').addEventListener('input',e=>{autoDrive.agents.spectral.weight=+e.target.value;document.getElementById('adSpecVal').textContent=(+e.target.value).toFixed(2);});
+    document.getElementById('adChaos').addEventListener('input',e=>{autoDrive.agents.chaos.weight=+e.target.value;document.getElementById('adChaosVal').textContent=(+e.target.value).toFixed(2);});
+    document.getElementById('adHarm').addEventListener('input',e=>{autoDrive.agents.harmonic.weight=+e.target.value;document.getElementById('adHarmVal').textContent=(+e.target.value).toFixed(2);});
+    document.getElementById('adIntel').addEventListener('input',e=>{autoDrive.intelligence=+e.target.value;document.getElementById('adIntelVal').textContent=(+e.target.value).toFixed(2);});
+    // Rotation engine sliders
+    document.getElementById('fspSpread').addEventListener('input',e=>{flowSettings.harmonicSpread=+e.target.value;document.getElementById('fspSpreadVal').textContent=(+e.target.value).toFixed(2)+'×';});
+    document.getElementById('fspSustainSens').addEventListener('input',e=>{flowSettings.sustainSensitivity=+e.target.value;document.getElementById('fspSustainSensVal').textContent=(+e.target.value).toFixed(3);});
+    // Volume gate sliders
+    document.getElementById('fspVolSens').addEventListener('input',e=>{volSensitivity=+e.target.value;document.getElementById('fspVolSensVal').textContent=(+e.target.value).toFixed(1)+'×';});
+    document.getElementById('fspVolFloor').addEventListener('input',e=>{volFloor=+e.target.value;document.getElementById('fspVolFloorVal').textContent=(+e.target.value).toFixed(2);});
+    // Master rotation override
+    document.getElementById('masterRotSlider').addEventListener('input',e=>{
+      rotMasterScale=+e.target.value;
+      document.getElementById('masterRotVal').textContent='×'+rotMasterScale.toFixed(2);
+    });
+  }
+
+  window.enterFlowMode=function(){buildFlowOverlay();flowActive=true;document.body.classList.add('flow-active');document.getElementById('flowCanvasWrap').appendChild(canvas);const sz=Math.min(window.innerWidth,window.innerHeight);canvas.width=canvas.height=Math.min(sz,1200);resizeFBOs();initParticles();document.getElementById('flowPermission').style.display='block';try{document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}};
+
+  window.startAudioCapture=async function(){
+    document.getElementById('flowPermission').style.display='none';
+    try{
+      mediaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+      audioCtx=new(window.AudioContext||window.webkitAudioContext)();const src=audioCtx.createMediaStreamSource(mediaStream);
+      analyser=audioCtx.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=0.75;src.connect(analyser);
+      analyserWave=audioCtx.createAnalyser();analyserWave.fftSize=2048;src.connect(analyserWave);
+      freqDataA=new Uint8Array(analyser.frequencyBinCount);timeDataA=new Uint8Array(analyserWave.fftSize);prevSpectrum=null;
+      energyHistory=[];for(const b in bandHistory)bandHistory[b]=[];
+      flowLoop();
+    }catch(err){
+      const p=document.getElementById('flowPermission');p.innerHTML=`<h2>Audio Access Needed</h2><p>Allow mic access to feed audio into the cymatics engine. Route system audio via virtual cable for full music reactivity.</p><button onclick="startAudioCapture()">✦ TRY AGAIN ✦</button><br><br><button onclick="startDemoMode()" style="border-color:rgba(255,0,255,0.4);color:rgba(255,0,255,0.8);">✧ DEMO MODE ✧</button>`;p.style.display='block';
+    }
+  };
+
+  window.startDemoMode=function(){
+    document.getElementById('flowPermission').style.display='none';
+    freqDataA=new Uint8Array(1024);timeDataA=new Uint8Array(2048);prevSpectrum=null;energyHistory=[];for(const b in bandHistory)bandHistory[b]=[];
+    window._flowDemoMode=true;flowLoop();
+  };
+
+  function genDemo(){
+    const n=performance.now()/1000;
+    for(let i=0;i<freqDataA.length;i++){const f=i/freqDataA.length;freqDataA[i]=Math.max(0,Math.min(255,Math.sin(n*0.5+f*10)*40+60+((Math.sin(n*2.2)>0.7?80:0)*(f<0.15?1:0))+Math.sin(n*0.3+f*6)*30+Math.random()*15));}
+    for(let i=0;i<timeDataA.length;i++)timeDataA[i]=128+Math.sin(i*0.05+n*3)*40+Math.sin(i*0.12+n*7)*20;
+  }
+
+  let flowRAF=null;
+  function flowLoop(){
+    if(!flowActive)return;
+    if(window._flowDemoMode){genDemo();if(!analyser){analyser={fftSize:2048,frequencyBinCount:1024};analyserWave={fftSize:2048};analyser.getByteFrequencyData=(a)=>{a.set(freqDataA);};analyserWave.getByteTimeDomainData=(a)=>{a.set(timeDataA);};audioCtx={sampleRate:44100};}}
+    analyzeAudio();flowRAF=requestAnimationFrame(flowLoop);
+  }
+
+  window.exitFlowMode=function(){
+    flowActive=false;window._flowActive=false;window._flowDemoMode=false;
+    if(flowRAF)cancelAnimationFrame(flowRAF);
+    if(mediaStream){mediaStream.getTracks().forEach(t=>t.stop());mediaStream=null;}
+    if(audioCtx&&audioCtx.close){audioCtx.close().catch(()=>{});audioCtx=null;analyser=null;analyserWave=null;}
+    if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
+    document.body.classList.remove('flow-active');
+    document.querySelector('.canvas-wrap').insertBefore(canvas,document.querySelector('.canvas-wrap').firstChild);
+    resize();
+    window._flowJuliaModR=0;window._flowJuliaModI=0;window._flowCoreFlash=0;window._flowParticleBurst=0;window._flowHueShift=0;window._flowTrailFade=0.12;window._flowSpiralTwist=0;window._flowWaveWarp=0;
+    document.getElementById('freqSlider').value=freq;document.getElementById('freqDisplay').textContent=freq;document.getElementById('freqBadge').textContent=freq+' Hz';
+    document.getElementById('mutSlider').value=mutRate;document.getElementById('mutVal').textContent=mutRate.toFixed(1)+'×';
+    document.getElementById('depthSlider').value=depth;document.getElementById('depthVal').textContent=depth;
+    document.getElementById('densSlider').value=density;document.getElementById('densVal').textContent=density;
+    document.getElementById('chromaSlider').value=chroma;document.getElementById('chromaVal').textContent=chroma;
+  };
+
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&flowActive)exitFlowMode();});
+})();
+
+// ── LAUNCH ──
+updateDesc();
+updateNoteDisplay(freq);
+decodeStateFromHash();
+render();
+</script>
+</body>
+</html>
